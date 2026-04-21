@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Objednávkový formulář – Divoké Farmy</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* brand earth palette */
+  --bg:#0d0b09;
+  --bg2:#17130f;
+  --bg3:#201a15;
+  --bg4:#29221c;
+  --border:rgba(131,114,97,0.18);
+  --b2:rgba(131,114,97,0.30);
+  --text:#e8e0d5;--t2:#dacbbc;--t3:#837261;
+  --gold:#dacbbc;--gold2:#b5997e;--gold3:#f0e8dc;
+  --gdim:rgba(131,114,97,0.10);
+  --accent:#837261;--accent2:#503f37;--accent3:#69756d;
+  --grn:#69756d;--gdim2:rgba(105,117,109,0.15);
+  --red:#c0665a;--rdim:rgba(192,102,90,0.12);
+  --blu:#7a9e8e;--bdim:rgba(122,158,142,0.12);
+  --shadow:0 4px 24px rgba(0,0,0,0.7);
+  --shadow-gold:0 0 0 1px rgba(131,114,97,0.20),0 8px 32px rgba(0,0,0,0.6);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-weight:700;-webkit-font-smoothing:antialiased;}
+
+/* ── PW ── */
+#pw-screen{position:fixed;inset:0;background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:2000;display:none;align-items:center;justify-content:center;}
+#pw-screen.show{display:flex;}
+.pw-card{width:340px;background:#DACBBC;border:1px solid rgba(80,63,55,0.15);border-radius:24px;padding:36px;text-align:center;box-shadow:var(--shadow-gold);}
+.pw-logo{margin-bottom:24px;}
+.pw-logo svg{height:38px;width:auto;opacity:0.8;}
+.pw-title{font-size:16px;font-weight:700;margin-bottom:6px;letter-spacing:.01em;color:#1e1e1e;}
+.pw-sub{font-size:13px;color:#837261;margin-bottom:22px;font-weight:500;}
+#pw-inp{width:100%;padding:13px 16px;background:rgba(255,255,255,0.55);border:1px solid rgba(80,63,55,0.20);border-radius:12px;color:#1e1e1e;font-size:18px;text-align:center;letter-spacing:.3em;outline:none;font-family:'Inter',sans-serif;font-weight:700;transition:border-color .2s,box-shadow .2s;}
+#pw-inp:focus{border-color:#837261;box-shadow:0 0 0 3px rgba(131,114,97,0.20);}
+.pw-err{font-size:12px;color:#a04438;margin-top:8px;min-height:18px;font-weight:600;}
+.pw-btn{width:100%;margin-top:16px;padding:14px;background:#503f37;color:#DACBBC;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;letter-spacing:.04em;}
+.pw-btn:hover{background:#1e1e1e;transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,0.25);}
+.pw-btn:active{transform:translateY(0);}
+.pw-cancel{display:block;margin-top:14px;font-size:12px;color:#837261;cursor:pointer;font-weight:600;transition:color .15s;}
+.pw-cancel:hover{color:#503f37;}
+
+/* ── ADMIN ── */
+#adm-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:1500;overflow-y:auto;padding:40px 20px 60px;}
+.adm-box{max-width:760px;margin:0 auto;background:#DACBBC;border:1px solid rgba(80,63,55,0.15);border-radius:24px;padding:36px;box-shadow:var(--shadow-gold);}
+.adm-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.adm-title{font-size:20px;font-weight:800;color:#1e1e1e;letter-spacing:-.01em;}
+.adm-sub{font-size:13px;color:#837261;margin-bottom:22px;font-weight:500;}
+.adm-close{background:rgba(255,255,255,0.45);border:1px solid rgba(80,63,55,0.20);color:#503f37;padding:8px 18px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;font-family:'Inter',sans-serif;}
+.adm-close:hover{background:#503f37;color:#DACBBC;border-color:#503f37;}
+#adm-srch{width:100%;padding:12px 16px;background:rgba(255,255,255,0.55);border:1px solid rgba(80,63,55,0.20);border-radius:12px;color:#1e1e1e;font-size:14px;margin-bottom:24px;outline:none;font-family:'Inter',sans-serif;font-weight:600;transition:border-color .2s,box-shadow .2s;}
+#adm-srch:focus{border-color:#837261;box-shadow:0 0 0 3px rgba(131,114,97,0.20);}
+#adm-srch::placeholder{color:#837261;}
+.adm-clabel{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#837261;margin-bottom:10px;padding-left:2px;font-weight:700;}
+.adm-cat{margin-bottom:22px;}
+.adm-item{margin-bottom:6px;}
+.adm-row{display:flex;align-items:center;gap:14px;padding:12px 16px;background:rgba(255,255,255,0.40);border-radius:12px;border:1px solid rgba(80,63,55,0.10);transition:all .2s;}
+.adm-row:hover{background:rgba(255,255,255,0.60);border-color:rgba(80,63,55,0.20);}
+.adm-pname{flex:1;font-size:14px;font-weight:700;color:#1e1e1e;}
+.adm-bal{font-size:11px;color:#837261;min-width:55px;font-weight:600;}
+.adm-edit-btn{background:rgba(80,63,55,0.10);border:1px solid rgba(80,63,55,0.18);color:#503f37;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;transition:all .18s;font-family:'Inter',sans-serif;flex-shrink:0;}
+.adm-edit-btn:hover{background:#503f37;color:#DACBBC;}
+.adm-edit-btn.open{background:#503f37;color:#DACBBC;}
+.adm-edit{display:none;padding:14px 16px 16px;background:rgba(255,255,255,0.55);border:1px solid rgba(80,63,55,0.15);border-top:none;border-radius:0 0 12px 12px;margin-top:-4px;}
+.adm-edit.show{display:block;}
+.adm-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.adm-edit-grid .full{grid-column:1/-1;}
+.adm-ef label{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#837261;margin-bottom:5px;font-weight:800;}
+.adm-ef input{width:100%;padding:8px 12px;background:#fff;border:1px solid rgba(80,63,55,0.20);border-radius:8px;color:#1e1e1e;font-size:13px;font-weight:700;outline:none;font-family:'Inter',sans-serif;transition:border-color .15s;}
+.adm-ef input:focus{border-color:#837261;}
+.adm-prod-save{padding:8px 18px;background:#503f37;color:#DACBBC;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;transition:all .18s;font-family:'Inter',sans-serif;letter-spacing:.03em;}
+.adm-prod-save:hover{background:#1e1e1e;}
+.tgl{position:relative;width:44px;height:26px;flex-shrink:0;}
+.tgl input{opacity:0;width:0;height:0;position:absolute;}
+.tsl{position:absolute;inset:0;background:#222;border-radius:13px;cursor:pointer;transition:background .25s;border:1px solid rgba(255,255,255,0.06);}
+.tsl:before{content:'';position:absolute;width:20px;height:20px;left:2px;top:2px;background:#444;border-radius:50%;transition:transform .25s,background .25s;box-shadow:0 1px 4px rgba(0,0,0,0.5);}
+.tgl input:checked + .tsl{background:rgba(105,117,109,0.25);border-color:rgba(105,117,109,0.4);}
+.tgl input:checked + .tsl:before{transform:translateX(18px);background:var(--grn);}
+.apill{font-size:11px;padding:4px 12px;border-radius:20px;min-width:84px;text-align:center;font-weight:700;letter-spacing:.02em;}
+.ap-ok{background:rgba(105,117,109,0.20);color:#3d6b5c;}
+.ap-no{background:rgba(192,102,90,0.15);color:#a04438;}
+.adm-save{width:100%;padding:14px;background:#503f37;color:#DACBBC;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:16px;transition:all .2s;letter-spacing:.04em;font-family:'Inter',sans-serif;}
+.adm-save:hover{background:#1e1e1e;transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,0.25);}
+
+/* ── PAGE ── */
+.page{max-width:1000px;margin:0 auto;padding:48px 24px 100px;}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding-bottom:32px;border-bottom:1px solid var(--border);margin-bottom:48px;}
+.logo-wrap svg{height:56px;width:auto;}
+.topbar-r{display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
+.topbar-date{font-size:12px;color:var(--t3);font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
+.btn-adm{background:var(--bg3);border:1px solid var(--border);color:var(--t3);padding:9px 16px;border-radius:10px;cursor:pointer;font-size:12px;letter-spacing:.04em;font-weight:700;transition:all .2s;font-family:'Inter',sans-serif;}
+.btn-adm:hover{border-color:var(--gold);color:var(--gold);background:var(--gdim);box-shadow:0 0 12px rgba(131,114,97,0.12);}
+
+.slabel{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);margin-bottom:16px;font-weight:800;}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:52px;}
+.cgrid .full{grid-column:1/-1;}
+.field label{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#837261;margin-bottom:8px;font-weight:800;}
+.field input,.field textarea{width:100%;padding:13px 16px;background:#DACBBC;border:1px solid rgba(80,63,55,0.20);border-radius:12px;color:#1e1e1e;font-size:14px;font-weight:700;outline:none;transition:border-color .2s,box-shadow .2s;font-family:'Inter',sans-serif;}
+.field input:focus,.field textarea:focus{border-color:#837261;box-shadow:0 0 0 3px rgba(131,114,97,0.20);}
+.field input::placeholder,.field textarea::placeholder{color:#a0897a;font-weight:500;}
+.field textarea{resize:vertical;min-height:68px;}
+
+.cat-block{margin-bottom:40px;background:#DACBBC;border:1px solid rgba(80,63,55,0.15);border-radius:20px;overflow:hidden;}
+.cat-hd{display:flex;align-items:baseline;gap:12px;padding:20px 22px 18px;border-bottom:1px solid rgba(80,63,55,0.15);background:linear-gradient(180deg,#cfc0ae,#DACBBC);}
+.cat-name{font-size:17px;font-weight:800;letter-spacing:-.01em;color:#1e1e1e;}
+.cat-cnt{font-size:12px;color:#837261;font-weight:600;background:rgba(80,63,55,0.10);padding:3px 10px;border-radius:20px;border:1px solid rgba(80,63,55,0.15);}
+
+table.pt{width:100%;border-collapse:collapse;}
+table.pt thead th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#837261;padding:12px 16px;text-align:left;font-weight:800;background:#cfc0ae;border-bottom:1px solid rgba(80,63,55,0.15);}
+table.pt thead th.r{text-align:right;}
+table.pt thead th.c{text-align:center;}
+table.pt tbody tr.pr{border-bottom:1px solid rgba(80,63,55,0.10);transition:background .15s;}
+table.pt tbody tr.pr:last-child{border-bottom:none;}
+table.pt tbody tr.pr:hover{background:rgba(80,63,55,0.07);}
+table.pt tbody tr.pr.na{opacity:.30;}
+table.pt td{padding:14px 16px;vertical-align:middle;}
+.td-r{text-align:right;}
+.td-c{text-align:center;}
+.pname{font-size:14px;font-weight:700;color:#1e1e1e;}
+.pmeta{font-size:11px;color:#837261;margin-top:3px;font-weight:500;}
+.ptag{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;white-space:nowrap;letter-spacing:.02em;}
+.tag-cold{background:rgba(122,158,142,0.2);color:#3d6b5c;border:1px solid rgba(122,158,142,0.30);}
+.tag-warm{background:rgba(80,63,55,0.12);color:#503f37;border:1px solid rgba(80,63,55,0.20);}
+.tag-na{background:rgba(192,102,90,0.15);color:#a04438;font-style:italic;border:1px solid rgba(192,102,90,0.25);}
+.pcell{font-size:13px;color:#503f37;white-space:nowrap;font-weight:700;}
+.qty-wrap{display:inline-flex;align-items:center;gap:5px;}
+.qty-btn{width:36px;height:36px;background:#503f37;color:#DACBBC;border:none;border-radius:9px;font-size:20px;font-weight:700;cursor:pointer;transition:all .15s;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Inter',sans-serif;}
+.qty-btn:hover{background:#1e1e1e;transform:scale(1.08);}
+.qty-btn:active{transform:scale(0.96);}
+.qty-inp{width:52px;padding:7px 4px;background:rgba(255,255,255,0.55);border:1px solid rgba(80,63,55,0.20);border-radius:8px;color:#1e1e1e;font-size:15px;font-weight:800;text-align:center;outline:none;transition:border-color .2s,box-shadow .2s;font-family:'Inter',sans-serif;}
+.qty-inp:focus{border-color:#837261;box-shadow:0 0 0 3px rgba(131,114,97,0.20);}
+/* hide native number spinners */
+.qty-inp::-webkit-inner-spin-button,.qty-inp::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+.qty-inp[type=number]{-moz-appearance:textfield;}
+.lsum{font-size:14px;font-weight:800;color:#503f37;white-space:nowrap;}
+
+.pnote{font-size:12px;color:#837261;font-style:italic;margin:0 0 32px;padding:14px 18px;background:#DACBBC;border:1px solid rgba(80,63,55,0.15);border-left:3px solid #503f37;border-radius:0 12px 12px 0;line-height:1.7;font-weight:500;}
+
+.summary{background:#DACBBC;border:1px solid rgba(80,63,55,0.15);border-radius:20px;padding:28px;margin:8px 0 26px;box-shadow:var(--shadow);}
+.sum-hd{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#837261;margin-bottom:18px;font-weight:800;}
+.sum-empty{font-size:13px;color:#837261;font-style:italic;font-weight:500;}
+.sum-items{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(80,63,55,0.15);}
+.srow{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;padding:5px 0;gap:16px;}
+.srow .sn{flex:1;color:#837261;font-weight:600;}
+.srow .sv{font-weight:800;white-space:nowrap;color:#1e1e1e;}
+.sum-sub{display:flex;justify-content:space-between;font-size:13px;color:#837261;padding:4px 0;font-weight:600;}
+.sum-total{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;padding-top:14px;border-top:1px solid rgba(80,63,55,0.20);}
+.sum-total .lbl{font-size:15px;font-weight:700;color:#1e1e1e;}
+.sum-total .val{font-size:28px;font-weight:800;letter-spacing:-.02em;color:#1e1e1e;}
+
+.send-btn{width:100%;padding:17px;background:#503f37;color:#DACBBC;border:none;border-radius:14px;font-size:15px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .25s;margin-bottom:12px;font-family:'Inter',sans-serif;box-shadow:0 4px 20px rgba(131,114,97,0.25);}
+.send-btn:hover{background:#1e1e1e;transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.3);}
+.send-btn:active{transform:translateY(0);box-shadow:0 2px 10px rgba(0,0,0,0.2);}
+
+footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--t3);line-height:2.5;font-weight:600;}
+footer strong{color:var(--t2);font-weight:800;}
+
+/* ── PDF button ── */
+.btn-row{display:flex;gap:12px;margin-bottom:12px;}
+.send-btn{flex:2;}
+.pdf-btn{flex:1;padding:17px;background:#DACBBC;color:#1e1e1e;border:1px solid rgba(80,63,55,0.25);border-radius:14px;font-size:15px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .25s;font-family:'Inter',sans-serif;}
+.pdf-btn:hover{background:#cfc0ae;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.15);}
+
+/* ── Admin extras ── */
+.adm-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.adm-add-btn{padding:9px 18px;background:#503f37;color:#DACBBC;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;letter-spacing:.03em;}
+.adm-add-btn:hover{background:#1e1e1e;}
+.adm-add-form{background:rgba(255,255,255,0.55);border:1px solid rgba(80,63,55,0.20);border-radius:16px;padding:20px;margin-bottom:22px;display:none;}
+.adm-add-form.show{display:block;}
+.adm-add-form h4{font-size:13px;font-weight:800;color:#1e1e1e;margin-bottom:14px;letter-spacing:.04em;text-transform:uppercase;}
+.adm-add-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.adm-add-grid .full{grid-column:1/-1;}
+.adm-af label{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#837261;margin-bottom:5px;font-weight:800;}
+.adm-af input,.adm-af select{width:100%;padding:9px 12px;background:#fff;border:1px solid rgba(80,63,55,0.20);border-radius:8px;color:#1e1e1e;font-size:13px;font-weight:700;outline:none;font-family:'Inter',sans-serif;transition:border-color .15s;}
+.adm-af input:focus,.adm-af select:focus{border-color:#837261;}
+.adm-add-actions{display:flex;gap:10px;}
+.adm-add-confirm{padding:9px 20px;background:#503f37;color:#DACBBC;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;transition:all .18s;}
+.adm-add-confirm:hover{background:#1e1e1e;}
+.adm-add-cancel{padding:9px 16px;background:rgba(80,63,55,0.10);color:#503f37;border:1px solid rgba(80,63,55,0.18);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .18s;}
+.adm-add-cancel:hover{background:rgba(80,63,55,0.20);}
+.adm-item-actions{display:flex;gap:6px;flex-shrink:0;}
+.adm-arch-btn{padding:5px 11px;background:rgba(80,63,55,0.10);border:1px solid rgba(80,63,55,0.18);color:#503f37;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;transition:all .18s;font-family:'Inter',sans-serif;}
+.adm-arch-btn:hover{background:#837261;color:#DACBBC;border-color:#837261;}
+.adm-del-btn{padding:5px 11px;background:rgba(192,102,90,0.10);border:1px solid rgba(192,102,90,0.20);color:#a04438;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;transition:all .18s;font-family:'Inter',sans-serif;}
+.adm-del-btn:hover{background:#a04438;color:#fff;border-color:#a04438;}
+.ap-arch{background:rgba(131,114,97,0.15);color:#837261;}
+.adm-row.archived-row{opacity:0.55;}
+
+@media(max-width:620px){
+  .cgrid{grid-template-columns:1fr;}
+  .cgrid .full{grid-column:1;}
+  .hm{display:none;}
+  .sum-total .val{font-size:22px;}
+  .page{padding:28px 16px 80px;}
+  .cat-block{border-radius:16px;}
+  .btn-row{flex-direction:column;}
+  .adm-add-grid{grid-template-columns:1fr;}
+  .adm-add-grid .full{grid-column:1;}
+}
+</style>
+</head>
+<body>
+
+<div id="pw-screen">
+  <div class="pw-card">
+    <div class="pw-logo"><svg width="100%" height="100%" viewBox="0 0 1995 1121" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(1,0,0,1,-4085.82,-1520.72)">
+        <g transform="matrix(4.16667,0,0,4.16667,4150.77,2262.25)">
+            <path d="M0,41.198C13.12,41.198 21.306,33.156 21.306,20.599C21.306,8.043 13.051,-0 -0.138,-0L-11.284,-0L-11.284,41.198L0,41.198ZM-15.59,-4.091L0,-4.091C15.731,-4.091 25.677,5.715 25.677,20.599C25.677,35.483 15.731,45.289 0,45.289L-15.59,45.289L-15.59,-4.091Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,3079.12,1308.86)">
+            <rect x="291.408" y="224.724" width="4.302" height="49.38" style="fill:#ddd5c0;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,4334.11,2450.95)">
+            <path d="M0,-49.38L4.586,-49.38L21.87,-5.926L29.274,-24.69L39.15,-49.38L43.667,-49.38L23.913,0L19.822,0L0,-49.38Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,4623.2,2259.31)">
+            <path d="M0,42.609C12.557,42.609 21.161,33.932 21.161,21.305C21.161,8.608 12.557,0.001 0,0.001C-12.488,0.001 -21.095,8.608 -21.095,21.305C-21.095,33.932 -12.488,42.609 0,42.609M-25.466,21.305C-25.466,6.21 -15.026,-4.302 0,-4.302C15.095,-4.302 25.463,6.21 25.463,21.305C25.463,36.402 15.095,46.911 0,46.911C-15.026,46.911 -25.466,36.402 -25.466,21.305" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,4765.15,2450.95)">
+            <path d="M0,-49.38L4.305,-49.38L4.305,-27.159L12.135,-27.159C19.822,-27.159 23.07,-29.769 25.324,-35.623L30.546,-49.38L35.059,-49.38L29.135,-33.931C27.583,-29.91 25.539,-27.088 22.364,-25.325L37.106,0L32.168,0L18.411,-23.774C16.579,-23.279 14.531,-23.068 12.135,-23.068L4.305,-23.068L4.305,0L0,0L0,-49.38Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5015.65,2450.95)">
+            <path d="M0,-63.911L4.375,-63.911L-0.564,-54.318L-4.444,-54.318L0,-63.911ZM-16.717,-49.38L12.346,-49.38L12.346,-45.358L-12.415,-45.358L-12.415,-27.159L10.513,-27.159L10.513,-23.208L-12.415,-23.208L-12.415,-4.02L13.12,-4.02L13.12,0L-16.717,0L-16.717,-49.38Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5180.23,2450.95)">
+            <path d="M0,-49.38L27.23,-49.38L27.23,-45.358L4.302,-45.358L4.302,-25.959L25.394,-25.959L25.394,-22.01L4.302,-22.01L4.302,0L0,0L0,-49.38Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5426.94,2313.4)">
+            <path d="M0,16.648L-11.215,-10.511L-22.361,16.648L0,16.648ZM-13.262,-16.366L-9.171,-16.366L11.288,33.014L6.771,33.014L1.622,20.599L-24.055,20.599L-29.135,33.014L-33.718,33.014L-13.262,-16.366Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5571.78,2339.56)">
+            <path d="M0,4.091C7.829,4.091 12.484,-0.211 12.484,-7.266C12.484,-14.25 7.829,-18.553 0,-18.553L-13.546,-18.553L-13.546,4.091L0,4.091ZM-17.848,-22.644L0.422,-22.644C10.368,-22.644 16.859,-16.648 16.859,-7.266C16.859,0.916 11.99,6.489 4.23,7.829L17.633,26.735L12.484,26.735L-0.778,8.182L-13.546,8.182L-13.546,26.735L-17.848,26.735L-17.848,-22.644Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5679.61,2450.95)">
+            <path d="M0,-49.38L4.019,-49.38L24.546,-18.483L45.074,-49.38L49.027,-49.38L49.027,0L44.794,0L44.794,-41.48L26.31,-13.755L22.783,-13.755L4.302,-41.48L4.302,0L0,0L0,-49.38Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5985.25,2320.75)">
+            <path d="M0,13.12L-18.695,-18.13L-13.757,-18.13L2.186,8.534L18.059,-18.13L22.924,-18.13L4.233,12.98L4.233,31.25L0,31.25L0,13.12Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,4723.87,2586.69)">
+            <path d="M0,7.197L2.001,7.197C2.21,9.758 4.211,11.268 7.688,11.268C10.882,11.268 12.812,10.04 12.812,8.039C12.812,6.144 11.093,4.985 7.231,4.317C2.492,3.511 0.351,1.825 0.351,-0.947C0.351,-4.036 2.983,-5.932 7.231,-5.932C11.513,-5.932 14.217,-3.896 14.497,-0.421L12.461,-0.421C12.25,-2.808 10.391,-4.107 7.231,-4.107C4.211,-4.107 2.387,-2.879 2.387,-0.913C2.387,0.877 3.897,1.861 7.933,2.633C12.532,3.511 14.813,5.336 14.813,8.074C14.813,11.128 12.041,13.129 7.651,13.129C3.054,13.129 0.14,10.812 0,7.197" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,3079.12,1786.95)">
+            <path d="M414.163,186.462L416.199,186.462L416.199,204.61L414.163,204.61L414.163,186.462ZM415.18,179.475C416.304,179.475 417.041,180.282 417.041,181.301C417.041,182.354 416.304,183.162 415.18,183.162C414.058,183.162 413.319,182.354 413.319,181.301C413.319,180.282 414.058,179.475 415.18,179.475" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,4837.35,2637.59)">
+            <path d="M0,-17.691L1.719,-17.691L1.896,-14.182C3.335,-16.78 5.861,-18.148 8.776,-18.148C13.514,-18.148 16.429,-14.813 16.429,-9.583L16.429,0.457L14.391,0.457L14.391,-9.407C14.391,-13.585 12.145,-16.183 8.53,-16.183C4.703,-16.183 2.036,-13.269 2.036,-8.952L2.036,0.457L0,0.457L0,-17.691Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,4923.24,2601.76)">
+            <path d="M0,-0.037C0,-5.618 3.827,-9.549 9.268,-9.549C13.585,-9.549 17.131,-6.988 18.184,-3.055L16.112,-3.055C14.919,-5.935 12.392,-7.585 9.268,-7.585C4.984,-7.585 2.036,-4.496 2.036,-0.037C2.036,4.456 4.984,7.545 9.268,7.545C12.603,7.545 15.201,5.684 16.218,2.701L18.359,2.701C17.131,6.948 13.725,9.512 9.268,9.512C3.827,9.512 0,5.544 0,-0.037" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5081.59,2605.7)">
+            <path d="M0,-1.931C-0.491,-6.039 -3.3,-8.565 -7.266,-8.565C-11.302,-8.565 -14.146,-5.933 -14.497,-1.931L0,-1.931ZM-16.569,-0.983C-16.569,-6.599 -12.778,-10.496 -7.266,-10.496C-1.544,-10.496 2.141,-6.284 2.001,-0.141L-14.497,-0.141C-14.146,3.967 -11.339,6.635 -7.3,6.635C-4.352,6.635 -2.001,5.265 -0.806,2.913L1.475,2.948C0.071,6.424 -3.229,8.565 -7.3,8.565C-12.812,8.565 -16.569,4.669 -16.569,-0.983" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5160.68,2614.48)">
+            <path d="M0,-12.567L-5.652,-12.567L-5.652,-14.568L-2.387,-14.568C-0.631,-14.568 -0.105,-14.954 0.14,-16.429L0.386,-18.57L2.107,-18.57L2.107,6.003L0,6.003L0,-12.567Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5225.94,2577.91)">
+            <path d="M0,4.528C3.967,4.528 6.776,1.861 6.776,-1.93C6.776,-5.686 3.967,-8.355 0,-8.355C-3.966,-8.355 -6.74,-5.686 -6.74,-1.93C-6.74,1.861 -3.966,4.528 0,4.528M8.812,-1.93C8.812,0.246 8.075,2.247 6.636,4.319L-0.597,14.779L-3.018,14.779L3.3,5.652C2.212,6.143 0.984,6.389 -0.28,6.389C-5.195,6.389 -8.81,2.878 -8.81,-1.93C-8.81,-6.774 -5.125,-10.251 0,-10.251C5.126,-10.251 8.812,-6.774 8.812,-1.93" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5318.29,2543.84)">
+            <path d="M0,21.342C4.668,21.342 7.511,17.271 7.511,10.671C7.511,4.037 4.668,0 0,0C-4.67,0 -7.513,4.037 -7.513,10.671C-7.513,17.271 -4.67,21.342 0,21.342M-9.654,10.671C-9.654,2.809 -5.934,-2.072 0,-2.072C5.932,-2.072 9.618,2.809 9.618,10.671C9.618,18.535 5.932,23.414 0,23.414C-5.934,23.414 -9.654,18.535 -9.654,10.671" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5374.84,2566.94)">
+            <path d="M0,10.706L2.072,10.706C2.318,13.831 4.67,15.796 8.11,15.796C11.761,15.796 14.182,13.515 14.182,10.109C14.182,6.669 11.761,4.457 8.11,4.457L0.773,4.457L1.721,-7.162L15.06,-7.162L15.06,-5.161L3.651,-5.161L2.983,2.493L8.11,2.493C12.989,2.493 16.288,5.581 16.288,10.146C16.288,14.743 12.989,17.868 8.11,17.868C3.405,17.868 0.246,15.059 0,10.706" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5192.9,1740.2)">
+            <path d="M0,-8.365C0,-8.365 -18.196,-13.162 -47.23,-8.583C-63.894,-5.154 -78.172,-0.381 -89.717,4.355C-89.953,4.452 -89.822,4.797 -89.576,4.732C-73.472,0.469 -59.435,-2.28 -48.234,-4.175C-24.837,-8.059 -11.218,-8.409 -3.972,-8.409L0,-8.409L0,-8.365Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5180.7,1779.68)">
+            <path d="M0,-5.066C0,-5.066 -13.248,-8.837 -34.562,-5.901C-47.809,-3.443 -59.033,0.205 -67.891,3.771C-55.142,0.568 -44.078,-1.389 -35.36,-2.689C-18.181,-5.197 -8.209,-5.258 -2.906,-5.155C-1.693,-5.131 -0.67,-5.111 0.001,-5.098L0,-5.066Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,4708.17,1733.81)">
+            <path d="M0,35.124C-7.882,39.344 -14.077,46.551 -17.014,54.956C-17.014,54.973 -17.031,54.973 -17.031,54.99C-17.199,55.581 -17.368,56.205 -17.554,56.813C-18.718,60.965 -19.815,64.847 -23.883,66.805C-26.753,68.122 -30.955,69.995 -35.057,71.818C-38.365,73.303 -41.606,74.755 -43.952,75.801C-44.914,76.24 -45.927,76.679 -46.889,77.101C-49.758,78.367 -52.779,79.633 -55.649,81.422C-57.809,82.772 -59.835,84.393 -61.674,86.266L-54.298,86.266C-53.893,85.979 -53.488,85.692 -53.083,85.439C-50.636,83.869 -47.935,82.654 -45.1,81.388C-44.087,80.949 -43.091,80.477 -42.078,79.987L-30.55,74.67C-29.47,74.097 -28.238,73.523 -26.938,72.966C-24.136,71.734 -20.946,70.35 -18.904,68.459C-15.714,65.809 -14.667,61.877 -13.655,58.113C-13.402,57.167 -13.182,56.458 -13.132,56.29C-12.271,52.796 -9.03,46.635 0.388,34.905L0,35.124ZM81.625,61.269C71.936,42.669 54.906,28.828 33.74,22.279C13.317,15.95 -9.25,17.351 -28.204,25.993L-28.592,26.162C-20.17,23.596 -4.456,19.933 15.106,22.668C33.318,25.25 46.754,32.288 54.197,36.93C54.366,37.031 54.298,37.268 54.113,37.284C22.803,41.555 -6.481,59.665 -25.419,86.266L-19.444,86.266C-3.038,63.767 21.132,47.766 47.665,41.875C47.581,42.534 47.53,43.141 47.496,43.766C46.922,47.867 45.083,52.053 41.774,56.948C35.968,65.37 28.204,72.358 20.727,78.586C17.621,80.831 15.073,83.414 13.233,86.266L18.55,86.266C19.917,84.713 21.554,83.228 23.444,81.861C31.208,75.447 39.243,68.24 45.353,59.378C49.066,53.977 51.108,49.218 51.767,44.373C51.902,43.243 51.986,42.145 52.121,41.048L52.121,40.913C54.028,40.576 56.003,40.289 58.147,40.019C58.197,40.002 58.265,40.019 58.315,40.053C66.4,46.601 72.78,54.484 77.388,63.446C81.152,70.434 83.971,78.097 85.76,86.266L90.925,86.266C88.967,77.354 85.861,68.949 81.625,61.269M119.466,-19.731C112.445,-21.267 86.806,-25.959 52.037,-21.2C22.432,-17.487 -27.158,-11.326 -42.77,16.828C-45.522,21.807 -46.045,27.917 -46.568,33.234L-46.669,34.28C-47.277,38.82 -49.37,43.58 -52.999,48.914C-59.413,58.248 -68.088,66.029 -76.426,73C-81.642,76.831 -85.321,81.321 -87.279,86.266L-82.182,86.266C-80.393,82.738 -77.456,79.515 -73.422,76.578C-64.78,69.421 -55.868,61.438 -49.015,51.581C-44.88,45.504 -42.601,40.221 -41.859,34.905C-41.774,33.976 -41.69,33.115 -41.606,32.238C-41.167,27.613 -40.728,23.241 -38.5,19.005C-37.369,16.912 -26.719,-6.482 52.594,-16.221C69.151,-18.263 91.921,-20.103 119.399,-19.343C119.652,-19.326 119.72,-19.681 119.466,-19.731M277.838,31.326C266.799,22.938 260.284,10.751 259.457,-2.954C258.934,-9.976 255.356,-16.44 249.381,-21.065C242.967,-26.044 234.528,-28.221 226.814,-26.82C226.105,-26.736 225.498,-26.567 224.89,-26.381C223.489,-26.044 222.307,-25.74 220.822,-26.128C219.438,-26.432 218.392,-27.259 217.295,-28.137C216.771,-28.576 216.197,-28.964 215.641,-29.352C211.742,-32.07 206.509,-33.335 201.007,-32.93L198.526,-32.778C198.391,-32.762 198.306,-32.643 198.34,-32.508L199.083,-30.145C200.264,-26.348 200.264,-23.732 199.083,-22.111C197.479,-19.934 193.715,-19.748 189.58,-19.748L188.787,-19.748C187.69,-27.124 183.504,-33.724 177.005,-38.483C169.883,-43.631 160.988,-45.809 152.785,-44.239C151.991,-44.104 151.299,-43.935 150.641,-43.766C149.105,-43.361 147.755,-43.024 146.134,-43.496C144.565,-43.851 143.434,-44.762 142.118,-45.775C141.56,-46.197 140.987,-46.686 140.328,-47.125C136.531,-49.741 131.602,-51.142 126.285,-51.142C125.543,-51.142 124.8,-51.142 124.057,-51.058L121.357,-50.889C121.222,-50.872 121.137,-50.754 121.171,-50.619L121.998,-48.037C123.315,-43.766 123.315,-40.83 121.998,-39.04C120.125,-36.509 115.753,-36.391 111.01,-36.391L106.116,-36.391L101.963,-36.289C73.506,-35.682 44.137,-35.074 15.444,-30.365C7.072,-28.88 -3.848,-26.652 -14.094,-22.415C-18.904,-20.542 -23.579,-18.043 -28.12,-15.697C-32.39,-13.469 -36.795,-11.106 -41.251,-9.317C-57.539,-3.173 -77.962,-4.119 -98.824,-11.984L-99.263,-12.153C-94.199,-8.76 -84.157,-3.039 -70.316,-1.469C-66.485,-1.03 -53.303,-0.017 -39.715,-5.435C-35.057,-7.309 -30.601,-9.621 -26.28,-11.9C-21.824,-14.212 -17.25,-16.66 -12.49,-18.482C13.233,-28.306 41.42,-29.622 68.662,-30.837C71.143,-30.922 73.59,-31.057 76.088,-31.192C85.591,-31.546 95.026,-31.715 106.251,-31.85L113.795,-31.968L115.112,-31.968C119.652,-31.968 123.146,-33.335 125.323,-35.901C127.467,-38.467 128.193,-42.045 127.382,-46.298C127.366,-46.416 127.467,-46.551 127.602,-46.534C131.619,-46.366 135.028,-45.302 137.763,-43.361C141.206,-40.526 145.392,-37.774 150.033,-38.872C157.848,-41.353 166.71,-40.002 173.765,-35.209C180.196,-30.888 184.027,-24.474 184.55,-17.216C185.512,-1.553 192.753,12.574 205.024,22.651C205.108,22.718 205.125,22.819 205.074,22.904C201.311,28.997 191.842,41.42 179.267,37.436C177.562,36.913 175.908,36.289 174.119,35.647C169.883,34.111 165.528,32.491 161.072,32.052C149.763,30.668 133.611,33.2 125.458,45.504C118.234,56.087 113.103,69.067 109.508,86.266L114.943,86.266C117.947,72.105 121.965,61.134 127.551,51.884L129.948,47.985C131.113,46.382 132.412,44.93 133.864,43.732C133.931,43.665 134.016,43.665 134.1,43.698C135.366,44.475 136.902,45.403 138.421,46.466L141.915,49.049C149.105,54.838 154.911,61.91 159.064,70.079L159.013,70.079C161.781,75.227 163.975,80.662 165.545,86.266L169.984,86.266C168.195,79.785 165.764,73.691 162.726,68.02C157.038,57.167 148.413,47.952 137.712,41.234C137.577,41.15 137.577,40.947 137.712,40.88C143.788,37.386 151.789,35.968 160.245,36.947C164.38,37.386 168.094,38.736 171.976,40.137C173.866,40.795 175.773,41.538 177.748,42.095C191.707,46.601 203.842,34.854 210.003,23.377L211.049,21.621L211.185,21.621L209.564,20.355C201.192,14.026 195.032,5.519 191.808,-4.22C190.964,-6.566 190.407,-8.929 190.407,-8.929C189.934,-11.005 189.563,-13.183 189.344,-15.427C189.327,-15.545 189.428,-15.647 189.546,-15.647L192.854,-15.647C196.905,-15.647 200.045,-16.879 201.969,-19.141C203.893,-21.402 204.568,-24.643 203.859,-28.491C203.842,-28.609 203.944,-28.744 204.079,-28.728C207.589,-28.559 210.729,-27.58 213.109,-25.909C216.197,-23.326 219.995,-20.845 224.147,-21.841C231.169,-24.069 239.119,-22.854 245.499,-18.533C251.254,-14.651 254.664,-8.878 255.136,-2.38C256.014,11.713 262.512,24.406 273.466,33.419C273.551,33.487 273.568,33.605 273.517,33.689C269.416,40.289 261.229,50.18 250.461,46.686C248.942,46.196 247.406,45.639 245.803,45.065C242.005,43.665 238.072,42.28 234.055,41.842C217.767,39.698 206.813,46.686 202.02,53.927C196.061,62.585 191.774,72.932 188.601,86.266L193.783,86.266C196.669,74.147 200.585,64.662 205.986,56.678C211.218,48.829 221.565,44.93 233.616,46.331C237.329,46.72 240.638,47.901 244.131,49.167C245.803,49.775 247.541,50.399 249.279,50.956C261.82,55.058 272.808,44.458 278.361,34.111L279.323,32.491L277.838,31.326Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,3968.7,2093.25)">
+            <path d="M0,0C176.951,-2.823 358.056,-2.846 535.006,0C358.055,2.846 176.951,2.823 0,0" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+    </g>
+</svg></div>
+    <div class="pw-title">Správa skladu</div>
+    <div class="pw-sub">Zadejte administrátorské heslo</div>
+    <input type="password" id="pw-inp" placeholder="••••••">
+    <div class="pw-err" id="pw-err"></div>
+    <button class="pw-btn" onclick="checkPw()">Přihlásit se</button>
+    <a class="pw-cancel" onclick="closePw()">Zrušit</a>
+  </div>
+</div>
+
+<div id="adm-ov">
+  <div class="adm-box">
+    <div class="adm-hd">
+      <div>
+        <div class="adm-title">Správa dostupnosti produktů</div>
+        <div class="adm-sub">Přepněte produkty — změna se projeví po uložení</div>
+      </div>
+      <button class="adm-close" onclick="closeAdmin()">✕ Zavřít</button>
+    </div>
+    <div class="adm-top">
+      <input type="text" id="adm-srch" placeholder="Hledat produkt..." style="flex:1;margin-bottom:0;">
+      <button class="adm-add-btn" onclick="toggleAddForm()">+ Přidat produkt</button>
+    </div>
+    <div class="adm-add-form" id="adm-add-form">
+      <h4>Nový produkt</h4>
+      <div class="adm-add-grid">
+        <div class="adm-af full"><label>Název produktu *</label><input id="anew-name" placeholder="např. Uzená kachna"></div>
+        <div class="adm-af"><label>Kategorie *</label><select id="anew-cat"><option value="">— vyberte —</option><option>Paštiky a pomazánky</option><option>Vývary</option><option>Klobásy a salámy</option><option>Párky a uzeniny</option><option>Špeky</option><option>Ostatní</option></select></div>
+        <div class="adm-af"><label>VOC cena (Kč bez DPH) *</label><input type="number" id="anew-voc" placeholder="0"></div>
+        <div class="adm-af"><label>Balení / Objem</label><input id="anew-baleni" placeholder="např. 200 g"></div>
+        <div class="adm-af"><label>Skladování</label><input id="anew-sklad" placeholder="např. lednice"></div>
+        <div class="adm-af"><label>Trvanlivost</label><input id="anew-trv" placeholder="např. 4 měsíce"></div>
+      </div>
+      <div class="adm-add-actions">
+        <button class="adm-add-confirm" onclick="addProd()">Přidat produkt</button>
+        <button class="adm-add-cancel" onclick="toggleAddForm()">Zrušit</button>
+      </div>
+    </div>
+    <div id="adm-list"></div>
+    <button class="adm-save" onclick="saveAdmin()">Uložit a zavřít</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="topbar">
+    <div class="logo-wrap"><svg width="100%" height="100%" viewBox="0 0 1995 1121" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(1,0,0,1,-4085.82,-1520.72)">
+        <g transform="matrix(4.16667,0,0,4.16667,4150.77,2262.25)">
+            <path d="M0,41.198C13.12,41.198 21.306,33.156 21.306,20.599C21.306,8.043 13.051,-0 -0.138,-0L-11.284,-0L-11.284,41.198L0,41.198ZM-15.59,-4.091L0,-4.091C15.731,-4.091 25.677,5.715 25.677,20.599C25.677,35.483 15.731,45.289 0,45.289L-15.59,45.289L-15.59,-4.091Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,3079.12,1308.86)">
+            <rect x="291.408" y="224.724" width="4.302" height="49.38" style="fill:#ddd5c0;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,4334.11,2450.95)">
+            <path d="M0,-49.38L4.586,-49.38L21.87,-5.926L29.274,-24.69L39.15,-49.38L43.667,-49.38L23.913,0L19.822,0L0,-49.38Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,4623.2,2259.31)">
+            <path d="M0,42.609C12.557,42.609 21.161,33.932 21.161,21.305C21.161,8.608 12.557,0.001 0,0.001C-12.488,0.001 -21.095,8.608 -21.095,21.305C-21.095,33.932 -12.488,42.609 0,42.609M-25.466,21.305C-25.466,6.21 -15.026,-4.302 0,-4.302C15.095,-4.302 25.463,6.21 25.463,21.305C25.463,36.402 15.095,46.911 0,46.911C-15.026,46.911 -25.466,36.402 -25.466,21.305" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,4765.15,2450.95)">
+            <path d="M0,-49.38L4.305,-49.38L4.305,-27.159L12.135,-27.159C19.822,-27.159 23.07,-29.769 25.324,-35.623L30.546,-49.38L35.059,-49.38L29.135,-33.931C27.583,-29.91 25.539,-27.088 22.364,-25.325L37.106,0L32.168,0L18.411,-23.774C16.579,-23.279 14.531,-23.068 12.135,-23.068L4.305,-23.068L4.305,0L0,0L0,-49.38Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5015.65,2450.95)">
+            <path d="M0,-63.911L4.375,-63.911L-0.564,-54.318L-4.444,-54.318L0,-63.911ZM-16.717,-49.38L12.346,-49.38L12.346,-45.358L-12.415,-45.358L-12.415,-27.159L10.513,-27.159L10.513,-23.208L-12.415,-23.208L-12.415,-4.02L13.12,-4.02L13.12,0L-16.717,0L-16.717,-49.38Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5180.23,2450.95)">
+            <path d="M0,-49.38L27.23,-49.38L27.23,-45.358L4.302,-45.358L4.302,-25.959L25.394,-25.959L25.394,-22.01L4.302,-22.01L4.302,0L0,0L0,-49.38Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5426.94,2313.4)">
+            <path d="M0,16.648L-11.215,-10.511L-22.361,16.648L0,16.648ZM-13.262,-16.366L-9.171,-16.366L11.288,33.014L6.771,33.014L1.622,20.599L-24.055,20.599L-29.135,33.014L-33.718,33.014L-13.262,-16.366Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5571.78,2339.56)">
+            <path d="M0,4.091C7.829,4.091 12.484,-0.211 12.484,-7.266C12.484,-14.25 7.829,-18.553 0,-18.553L-13.546,-18.553L-13.546,4.091L0,4.091ZM-17.848,-22.644L0.422,-22.644C10.368,-22.644 16.859,-16.648 16.859,-7.266C16.859,0.916 11.99,6.489 4.23,7.829L17.633,26.735L12.484,26.735L-0.778,8.182L-13.546,8.182L-13.546,26.735L-17.848,26.735L-17.848,-22.644Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5679.61,2450.95)">
+            <path d="M0,-49.38L4.019,-49.38L24.546,-18.483L45.074,-49.38L49.027,-49.38L49.027,0L44.794,0L44.794,-41.48L26.31,-13.755L22.783,-13.755L4.302,-41.48L4.302,0L0,0L0,-49.38Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5985.25,2320.75)">
+            <path d="M0,13.12L-18.695,-18.13L-13.757,-18.13L2.186,8.534L18.059,-18.13L22.924,-18.13L4.233,12.98L4.233,31.25L0,31.25L0,13.12Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,4723.87,2586.69)">
+            <path d="M0,7.197L2.001,7.197C2.21,9.758 4.211,11.268 7.688,11.268C10.882,11.268 12.812,10.04 12.812,8.039C12.812,6.144 11.093,4.985 7.231,4.317C2.492,3.511 0.351,1.825 0.351,-0.947C0.351,-4.036 2.983,-5.932 7.231,-5.932C11.513,-5.932 14.217,-3.896 14.497,-0.421L12.461,-0.421C12.25,-2.808 10.391,-4.107 7.231,-4.107C4.211,-4.107 2.387,-2.879 2.387,-0.913C2.387,0.877 3.897,1.861 7.933,2.633C12.532,3.511 14.813,5.336 14.813,8.074C14.813,11.128 12.041,13.129 7.651,13.129C3.054,13.129 0.14,10.812 0,7.197" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,3079.12,1786.95)">
+            <path d="M414.163,186.462L416.199,186.462L416.199,204.61L414.163,204.61L414.163,186.462ZM415.18,179.475C416.304,179.475 417.041,180.282 417.041,181.301C417.041,182.354 416.304,183.162 415.18,183.162C414.058,183.162 413.319,182.354 413.319,181.301C413.319,180.282 414.058,179.475 415.18,179.475" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,4837.35,2637.59)">
+            <path d="M0,-17.691L1.719,-17.691L1.896,-14.182C3.335,-16.78 5.861,-18.148 8.776,-18.148C13.514,-18.148 16.429,-14.813 16.429,-9.583L16.429,0.457L14.391,0.457L14.391,-9.407C14.391,-13.585 12.145,-16.183 8.53,-16.183C4.703,-16.183 2.036,-13.269 2.036,-8.952L2.036,0.457L0,0.457L0,-17.691Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,4923.24,2601.76)">
+            <path d="M0,-0.037C0,-5.618 3.827,-9.549 9.268,-9.549C13.585,-9.549 17.131,-6.988 18.184,-3.055L16.112,-3.055C14.919,-5.935 12.392,-7.585 9.268,-7.585C4.984,-7.585 2.036,-4.496 2.036,-0.037C2.036,4.456 4.984,7.545 9.268,7.545C12.603,7.545 15.201,5.684 16.218,2.701L18.359,2.701C17.131,6.948 13.725,9.512 9.268,9.512C3.827,9.512 0,5.544 0,-0.037" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5081.59,2605.7)">
+            <path d="M0,-1.931C-0.491,-6.039 -3.3,-8.565 -7.266,-8.565C-11.302,-8.565 -14.146,-5.933 -14.497,-1.931L0,-1.931ZM-16.569,-0.983C-16.569,-6.599 -12.778,-10.496 -7.266,-10.496C-1.544,-10.496 2.141,-6.284 2.001,-0.141L-14.497,-0.141C-14.146,3.967 -11.339,6.635 -7.3,6.635C-4.352,6.635 -2.001,5.265 -0.806,2.913L1.475,2.948C0.071,6.424 -3.229,8.565 -7.3,8.565C-12.812,8.565 -16.569,4.669 -16.569,-0.983" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5160.68,2614.48)">
+            <path d="M0,-12.567L-5.652,-12.567L-5.652,-14.568L-2.387,-14.568C-0.631,-14.568 -0.105,-14.954 0.14,-16.429L0.386,-18.57L2.107,-18.57L2.107,6.003L0,6.003L0,-12.567Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5225.94,2577.91)">
+            <path d="M0,4.528C3.967,4.528 6.776,1.861 6.776,-1.93C6.776,-5.686 3.967,-8.355 0,-8.355C-3.966,-8.355 -6.74,-5.686 -6.74,-1.93C-6.74,1.861 -3.966,4.528 0,4.528M8.812,-1.93C8.812,0.246 8.075,2.247 6.636,4.319L-0.597,14.779L-3.018,14.779L3.3,5.652C2.212,6.143 0.984,6.389 -0.28,6.389C-5.195,6.389 -8.81,2.878 -8.81,-1.93C-8.81,-6.774 -5.125,-10.251 0,-10.251C5.126,-10.251 8.812,-6.774 8.812,-1.93" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5318.29,2543.84)">
+            <path d="M0,21.342C4.668,21.342 7.511,17.271 7.511,10.671C7.511,4.037 4.668,0 0,0C-4.67,0 -7.513,4.037 -7.513,10.671C-7.513,17.271 -4.67,21.342 0,21.342M-9.654,10.671C-9.654,2.809 -5.934,-2.072 0,-2.072C5.932,-2.072 9.618,2.809 9.618,10.671C9.618,18.535 5.932,23.414 0,23.414C-5.934,23.414 -9.654,18.535 -9.654,10.671" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5374.84,2566.94)">
+            <path d="M0,10.706L2.072,10.706C2.318,13.831 4.67,15.796 8.11,15.796C11.761,15.796 14.182,13.515 14.182,10.109C14.182,6.669 11.761,4.457 8.11,4.457L0.773,4.457L1.721,-7.162L15.06,-7.162L15.06,-5.161L3.651,-5.161L2.983,2.493L8.11,2.493C12.989,2.493 16.288,5.581 16.288,10.146C16.288,14.743 12.989,17.868 8.11,17.868C3.405,17.868 0.246,15.059 0,10.706" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5192.9,1740.2)">
+            <path d="M0,-8.365C0,-8.365 -18.196,-13.162 -47.23,-8.583C-63.894,-5.154 -78.172,-0.381 -89.717,4.355C-89.953,4.452 -89.822,4.797 -89.576,4.732C-73.472,0.469 -59.435,-2.28 -48.234,-4.175C-24.837,-8.059 -11.218,-8.409 -3.972,-8.409L0,-8.409L0,-8.365Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,5180.7,1779.68)">
+            <path d="M0,-5.066C0,-5.066 -13.248,-8.837 -34.562,-5.901C-47.809,-3.443 -59.033,0.205 -67.891,3.771C-55.142,0.568 -44.078,-1.389 -35.36,-2.689C-18.181,-5.197 -8.209,-5.258 -2.906,-5.155C-1.693,-5.131 -0.67,-5.111 0.001,-5.098L0,-5.066Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,4708.17,1733.81)">
+            <path d="M0,35.124C-7.882,39.344 -14.077,46.551 -17.014,54.956C-17.014,54.973 -17.031,54.973 -17.031,54.99C-17.199,55.581 -17.368,56.205 -17.554,56.813C-18.718,60.965 -19.815,64.847 -23.883,66.805C-26.753,68.122 -30.955,69.995 -35.057,71.818C-38.365,73.303 -41.606,74.755 -43.952,75.801C-44.914,76.24 -45.927,76.679 -46.889,77.101C-49.758,78.367 -52.779,79.633 -55.649,81.422C-57.809,82.772 -59.835,84.393 -61.674,86.266L-54.298,86.266C-53.893,85.979 -53.488,85.692 -53.083,85.439C-50.636,83.869 -47.935,82.654 -45.1,81.388C-44.087,80.949 -43.091,80.477 -42.078,79.987L-30.55,74.67C-29.47,74.097 -28.238,73.523 -26.938,72.966C-24.136,71.734 -20.946,70.35 -18.904,68.459C-15.714,65.809 -14.667,61.877 -13.655,58.113C-13.402,57.167 -13.182,56.458 -13.132,56.29C-12.271,52.796 -9.03,46.635 0.388,34.905L0,35.124ZM81.625,61.269C71.936,42.669 54.906,28.828 33.74,22.279C13.317,15.95 -9.25,17.351 -28.204,25.993L-28.592,26.162C-20.17,23.596 -4.456,19.933 15.106,22.668C33.318,25.25 46.754,32.288 54.197,36.93C54.366,37.031 54.298,37.268 54.113,37.284C22.803,41.555 -6.481,59.665 -25.419,86.266L-19.444,86.266C-3.038,63.767 21.132,47.766 47.665,41.875C47.581,42.534 47.53,43.141 47.496,43.766C46.922,47.867 45.083,52.053 41.774,56.948C35.968,65.37 28.204,72.358 20.727,78.586C17.621,80.831 15.073,83.414 13.233,86.266L18.55,86.266C19.917,84.713 21.554,83.228 23.444,81.861C31.208,75.447 39.243,68.24 45.353,59.378C49.066,53.977 51.108,49.218 51.767,44.373C51.902,43.243 51.986,42.145 52.121,41.048L52.121,40.913C54.028,40.576 56.003,40.289 58.147,40.019C58.197,40.002 58.265,40.019 58.315,40.053C66.4,46.601 72.78,54.484 77.388,63.446C81.152,70.434 83.971,78.097 85.76,86.266L90.925,86.266C88.967,77.354 85.861,68.949 81.625,61.269M119.466,-19.731C112.445,-21.267 86.806,-25.959 52.037,-21.2C22.432,-17.487 -27.158,-11.326 -42.77,16.828C-45.522,21.807 -46.045,27.917 -46.568,33.234L-46.669,34.28C-47.277,38.82 -49.37,43.58 -52.999,48.914C-59.413,58.248 -68.088,66.029 -76.426,73C-81.642,76.831 -85.321,81.321 -87.279,86.266L-82.182,86.266C-80.393,82.738 -77.456,79.515 -73.422,76.578C-64.78,69.421 -55.868,61.438 -49.015,51.581C-44.88,45.504 -42.601,40.221 -41.859,34.905C-41.774,33.976 -41.69,33.115 -41.606,32.238C-41.167,27.613 -40.728,23.241 -38.5,19.005C-37.369,16.912 -26.719,-6.482 52.594,-16.221C69.151,-18.263 91.921,-20.103 119.399,-19.343C119.652,-19.326 119.72,-19.681 119.466,-19.731M277.838,31.326C266.799,22.938 260.284,10.751 259.457,-2.954C258.934,-9.976 255.356,-16.44 249.381,-21.065C242.967,-26.044 234.528,-28.221 226.814,-26.82C226.105,-26.736 225.498,-26.567 224.89,-26.381C223.489,-26.044 222.307,-25.74 220.822,-26.128C219.438,-26.432 218.392,-27.259 217.295,-28.137C216.771,-28.576 216.197,-28.964 215.641,-29.352C211.742,-32.07 206.509,-33.335 201.007,-32.93L198.526,-32.778C198.391,-32.762 198.306,-32.643 198.34,-32.508L199.083,-30.145C200.264,-26.348 200.264,-23.732 199.083,-22.111C197.479,-19.934 193.715,-19.748 189.58,-19.748L188.787,-19.748C187.69,-27.124 183.504,-33.724 177.005,-38.483C169.883,-43.631 160.988,-45.809 152.785,-44.239C151.991,-44.104 151.299,-43.935 150.641,-43.766C149.105,-43.361 147.755,-43.024 146.134,-43.496C144.565,-43.851 143.434,-44.762 142.118,-45.775C141.56,-46.197 140.987,-46.686 140.328,-47.125C136.531,-49.741 131.602,-51.142 126.285,-51.142C125.543,-51.142 124.8,-51.142 124.057,-51.058L121.357,-50.889C121.222,-50.872 121.137,-50.754 121.171,-50.619L121.998,-48.037C123.315,-43.766 123.315,-40.83 121.998,-39.04C120.125,-36.509 115.753,-36.391 111.01,-36.391L106.116,-36.391L101.963,-36.289C73.506,-35.682 44.137,-35.074 15.444,-30.365C7.072,-28.88 -3.848,-26.652 -14.094,-22.415C-18.904,-20.542 -23.579,-18.043 -28.12,-15.697C-32.39,-13.469 -36.795,-11.106 -41.251,-9.317C-57.539,-3.173 -77.962,-4.119 -98.824,-11.984L-99.263,-12.153C-94.199,-8.76 -84.157,-3.039 -70.316,-1.469C-66.485,-1.03 -53.303,-0.017 -39.715,-5.435C-35.057,-7.309 -30.601,-9.621 -26.28,-11.9C-21.824,-14.212 -17.25,-16.66 -12.49,-18.482C13.233,-28.306 41.42,-29.622 68.662,-30.837C71.143,-30.922 73.59,-31.057 76.088,-31.192C85.591,-31.546 95.026,-31.715 106.251,-31.85L113.795,-31.968L115.112,-31.968C119.652,-31.968 123.146,-33.335 125.323,-35.901C127.467,-38.467 128.193,-42.045 127.382,-46.298C127.366,-46.416 127.467,-46.551 127.602,-46.534C131.619,-46.366 135.028,-45.302 137.763,-43.361C141.206,-40.526 145.392,-37.774 150.033,-38.872C157.848,-41.353 166.71,-40.002 173.765,-35.209C180.196,-30.888 184.027,-24.474 184.55,-17.216C185.512,-1.553 192.753,12.574 205.024,22.651C205.108,22.718 205.125,22.819 205.074,22.904C201.311,28.997 191.842,41.42 179.267,37.436C177.562,36.913 175.908,36.289 174.119,35.647C169.883,34.111 165.528,32.491 161.072,32.052C149.763,30.668 133.611,33.2 125.458,45.504C118.234,56.087 113.103,69.067 109.508,86.266L114.943,86.266C117.947,72.105 121.965,61.134 127.551,51.884L129.948,47.985C131.113,46.382 132.412,44.93 133.864,43.732C133.931,43.665 134.016,43.665 134.1,43.698C135.366,44.475 136.902,45.403 138.421,46.466L141.915,49.049C149.105,54.838 154.911,61.91 159.064,70.079L159.013,70.079C161.781,75.227 163.975,80.662 165.545,86.266L169.984,86.266C168.195,79.785 165.764,73.691 162.726,68.02C157.038,57.167 148.413,47.952 137.712,41.234C137.577,41.15 137.577,40.947 137.712,40.88C143.788,37.386 151.789,35.968 160.245,36.947C164.38,37.386 168.094,38.736 171.976,40.137C173.866,40.795 175.773,41.538 177.748,42.095C191.707,46.601 203.842,34.854 210.003,23.377L211.049,21.621L211.185,21.621L209.564,20.355C201.192,14.026 195.032,5.519 191.808,-4.22C190.964,-6.566 190.407,-8.929 190.407,-8.929C189.934,-11.005 189.563,-13.183 189.344,-15.427C189.327,-15.545 189.428,-15.647 189.546,-15.647L192.854,-15.647C196.905,-15.647 200.045,-16.879 201.969,-19.141C203.893,-21.402 204.568,-24.643 203.859,-28.491C203.842,-28.609 203.944,-28.744 204.079,-28.728C207.589,-28.559 210.729,-27.58 213.109,-25.909C216.197,-23.326 219.995,-20.845 224.147,-21.841C231.169,-24.069 239.119,-22.854 245.499,-18.533C251.254,-14.651 254.664,-8.878 255.136,-2.38C256.014,11.713 262.512,24.406 273.466,33.419C273.551,33.487 273.568,33.605 273.517,33.689C269.416,40.289 261.229,50.18 250.461,46.686C248.942,46.196 247.406,45.639 245.803,45.065C242.005,43.665 238.072,42.28 234.055,41.842C217.767,39.698 206.813,46.686 202.02,53.927C196.061,62.585 191.774,72.932 188.601,86.266L193.783,86.266C196.669,74.147 200.585,64.662 205.986,56.678C211.218,48.829 221.565,44.93 233.616,46.331C237.329,46.72 240.638,47.901 244.131,49.167C245.803,49.775 247.541,50.399 249.279,50.956C261.82,55.058 272.808,44.458 278.361,34.111L279.323,32.491L277.838,31.326Z" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+        <g transform="matrix(4.16667,0,0,4.16667,3968.7,2093.25)">
+            <path d="M0,0C176.951,-2.823 358.056,-2.846 535.006,0C358.055,2.846 176.951,2.823 0,0" style="fill:#ddd5c0;fill-rule:nonzero;"/>
+        </g>
+    </g>
+</svg></div>
+    <div class="topbar-r">
+      <div class="topbar-date" id="dnes"></div>
+      <button class="btn-adm" onclick="openPw()">⚙ Správa skladu</button>
+    </div>
+  </div>
+
+  <div class="slabel">Kontaktní údaje</div>
+  <div class="cgrid">
+    <div class="field"><label>Jméno a příjmení *</label><input type="text" id="jmeno" placeholder="Jan Novák"></div>
+    <div class="field"><label>Firma / provozovna</label><input type="text" id="firma" placeholder="Restaurace U Nováků"></div>
+    <div class="field"><label>E-mail *</label><input type="email" id="email" placeholder="jan@example.cz"></div>
+    <div class="field"><label>Telefon</label><input type="tel" id="tel" placeholder="+420 000 000 000"></div>
+    <div class="field full"><label>Doručovací adresa</label><input type="text" id="adr" placeholder="Ulice č.p., PSČ Město"></div>
+  </div>
+
+  <div class="slabel">Výběr produktů</div>
+  <div id="pc"></div>
+
+  <div class="pnote">* Skutečná cena bude upřesněna dle skutečné váhy váženého zboží. Ceny jsou bez DPH (12 %).</div>
+
+  <div class="summary">
+    <div class="sum-hd">Souhrn objednávky</div>
+    <div id="sb"><div class="sum-empty">Zatím nebyl vybrán žádný produkt.</div></div>
+    <div class="sum-total"><span class="lbl">Celkem bez DPH</span><span class="val" id="tv">0 Kč</span></div>
+    <div class="sum-sub" id="tsdph" style="margin-top:5px;color:var(--t3);font-size:12px;"></div>
+  </div>
+
+  <div class="field" style="margin-bottom:20px;">
+    <label>Poznámka k objednávce</label>
+    <textarea id="poz" placeholder="Termín dodání, speciální požadavky, způsob odběru…"></textarea>
+  </div>
+
+  <div class="btn-row">
+    <button class="send-btn" onclick="odeslat()">Odeslat objednávku e-mailem →</button>
+    <button class="pdf-btn" onclick="generatePDF()">Stáhnout PDF</button>
+  </div>
+
+  <div id="pdf-notice" style="display:none;opacity:0;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#503f37;color:#DACBBC;padding:14px 22px;border-radius:12px;font-size:13px;font-weight:700;box-shadow:0 8px 32px rgba(0,0,0,0.4);z-index:9999;gap:10px;align-items:center;transition:opacity .4s;max-width:90vw;text-align:center;">
+    📎 PDF objednávky bylo staženo do počítače — před odesláním e-mailu ho prosím přiložte jako přílohu.
+  </div>
+
+  <footer>
+    <strong>DF obchodní s.r.o.</strong> &nbsp;·&nbsp; IČO: 29279313<br>
+    Šebrov 195, 679 22 Lipůvka<br>
+    adam@divokefarmy.cz &nbsp;·&nbsp; +420 777 186 246 &nbsp;·&nbsp; divokefarmy.cz
+  </footer>
+</div>
+
+<script>
+
+const ADMIN_PW = 'farmy2025';
+const EMAIL_TO = 'adam@divokefarmy.cz';
+const VAT = 0.12;
+const P = [{"cat": "Paštiky a pomazánky", "name": "Hrubá vepřová paštika", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 63, "ok": false}, {"cat": "Paštiky a pomazánky", "name": "Husí paštika", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 75, "ok": true}, {"cat": "Paštiky a pomazánky", "name": "Jemná vepřová paštika", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 63, "ok": true}, {"cat": "Paštiky a pomazánky", "name": "Kachní játrová paštika", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 75, "ok": true}, {"cat": "Paštiky a pomazánky", "name": "Polohrubá z divočáka", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 69, "ok": true}, {"cat": "Paštiky a pomazánky", "name": "Slaninový džem", "baleni": "120 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 63, "ok": false}, {"cat": "Paštiky a pomazánky", "name": "Pikantní topinková směs", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 51, "ok": false}, {"cat": "Vývary", "name": "Hovězí vývar", "baleni": "165 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 30, "ok": true}, {"cat": "Vývary", "name": "Vepřový vývar", "baleni": "165 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 30, "ok": true}, {"cat": "Vývary", "name": "Drůbeží vývar", "baleni": "165 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 30, "ok": true}, {"cat": "Klobásy a salámy", "name": "Klobása z divočáka – zelený pepř", "baleni": "120 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 50, "ok": false}, {"cat": "Klobásy a salámy", "name": "Klobása z Gruntu – 1 kus", "baleni": "100 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 31, "ok": true}, {"cat": "Klobásy a salámy", "name": "Klobása z Gruntu – pár", "baleni": "200 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 62, "ok": true}, {"cat": "Klobásy a salámy", "name": "Klobása Pikoška – 1 kus", "baleni": "100 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 31, "ok": true}, {"cat": "Klobásy a salámy", "name": "Klobása Pikoška – pár", "baleni": "200 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 62, "ok": true}, {"cat": "Klobásy a salámy", "name": "Podkova s goudou", "baleni": "130 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 55, "ok": true}, {"cat": "Klobásy a salámy", "name": "S jamajským rumem a brusinkami", "baleni": "120 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 50, "ok": true}, {"cat": "Klobásy a salámy", "name": "S vlašskými ořechy", "baleni": "120 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 50, "ok": true}, {"cat": "Klobásy a salámy", "name": "Španělka", "baleni": "130 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 55, "ok": true}, {"cat": "Klobásy a salámy", "name": "Jelení huhuchilli", "baleni": "115 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 68, "ok": false}, {"cat": "Klobásy a salámy", "name": "Hovězí japaleno cheddar", "baleni": "120 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 68, "ok": false}, {"cat": "Párky a uzeniny", "name": "Špekáček 2 kusy", "baleni": "230–250 g", "sklad": "lednice", "trv": "21 dní", "voc": 38, "ok": false}, {"cat": "Párky a uzeniny", "name": "Špekáček 4 kusy", "baleni": "", "sklad": "lednice", "trv": "", "voc": 76, "ok": false}, {"cat": "Párky a uzeniny", "name": "Vepřový párek", "baleni": "370–400 g", "sklad": "lednice", "trv": "21 dní", "voc": 100, "ok": true}, {"cat": "Párky a uzeniny", "name": "Vranovská anglická slanina kus", "baleni": "250 g", "sklad": "lednice", "trv": "21 dní", "voc": 70, "ok": true}, {"cat": "Párky a uzeniny", "name": "Vranovská anglická slanina krájená", "baleni": "200 g", "sklad": "lednice", "trv": "14 dní", "voc": 56, "ok": true}, {"cat": "Ostatní", "name": "Medová šunka", "baleni": "100 g", "sklad": "lednice", "trv": "7 dní", "voc": 23, "ok": true}, {"cat": "Ostatní", "name": "Sádlo malé", "baleni": "600 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 63, "ok": true}, {"cat": "Ostatní", "name": "Sekaná česnek", "baleni": "500 g", "sklad": "lednice", "trv": "14 dní", "voc": 91, "ok": true}, {"cat": "Ostatní", "name": "Škvarková pomazánka", "baleni": "200 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 34, "ok": true}, {"cat": "Ostatní", "name": "Škvarky v sádle menší", "baleni": "365 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 67, "ok": true}, {"cat": "Ostatní", "name": "Kachní chipsy", "baleni": "40 g", "sklad": "do 25°C", "trv": "4 měsíce", "voc": 57, "ok": true}, {"cat": "Ostatní", "name": "Jerky vepřové", "baleni": "30 g", "sklad": "do 25°C", "trv": "4 měsíce", "voc": 52, "ok": false}, {"cat": "Špeky", "name": "Špek farmářský", "baleni": "200 g", "sklad": "lednice", "trv": "3 měsíce", "voc": 40, "ok": true}, {"cat": "Špeky", "name": "Paprikový špek", "baleni": "200 g", "sklad": "lednice", "trv": "3 měsíce", "voc": 40, "ok": true}, {"cat": "Špeky", "name": "Zauzený špek", "baleni": "200 g", "sklad": "lednice", "trv": "3 měsíce", "voc": 43, "ok": true}];
+// ── state ──
+let avail = {};
+P.forEach(function(p,i){ avail[i] = p.ok; });
+try { var s = localStorage.getItem('df_av'); if(s) Object.assign(avail, JSON.parse(s)); } catch(e){}
+
+let prodOverrides = {};
+try { var po = localStorage.getItem('df_po'); if(po){ prodOverrides=JSON.parse(po); Object.keys(prodOverrides).forEach(function(i){ if(P[i]) Object.assign(P[i],prodOverrides[i]); }); } } catch(e){}
+
+let archived = {};
+try { var ar = localStorage.getItem('df_arch'); if(ar) archived=JSON.parse(ar); } catch(e){}
+
+let deleted = {};
+try { var dl = localStorage.getItem('df_del'); if(dl) deleted=JSON.parse(dl); } catch(e){}
+
+let customProds = [];
+try {
+  var cp = localStorage.getItem('df_cp');
+  if(cp){
+    customProds = JSON.parse(cp);
+    customProds.forEach(function(p){ P.push(Object.assign({_custom:true},p)); });
+  }
+} catch(e){}
+
+function fmt(n){ return n.toLocaleString('cs-CZ',{minimumFractionDigits:2,maximumFractionDigits:2})+' Kč'; }
+function changeQty(i,d){ var el=document.getElementById('q'+i); if(!el) return; el.value=Math.max(0,(parseInt(el.value)||0)+d); recalc(); }
+
+function buildAll(){
+  var cats = [];
+  P.forEach(function(p,i){ if(!deleted[i]&&!archived[i]&&cats.indexOf(p.cat)<0) cats.push(p.cat); });
+  var cont = document.getElementById('pc');
+  cont.innerHTML = '';
+  cats.forEach(function(cat){
+    var prods = P.map(function(p,i){ return Object.assign({},p,{idx:i}); })
+      .filter(function(p){ return p.cat===cat && !deleted[p.idx] && !archived[p.idx]; });
+    if(!prods.length) return;
+    var nok = prods.filter(function(p){ return avail[p.idx]; }).length;
+    var thead = '<table class="pt"><thead><tr>'
+      +'<th>Produkt</th>'
+      +'<th class="hm">Objem</th>'
+      +'<th class="hm">Trvanlivost</th>'
+      +'<th class="hm">Skladování</th>'
+      +'<th class="r">VOC bez DPH</th>'
+      +'<th class="r hm">Dop. MOC</th>'
+      +'<th class="c">Množství</th>'
+      +'<th class="r">Mezisoučet</th>'
+      +'</tr></thead><tbody>';
+    var rows = '';
+    prods.forEach(function(p){
+      var ok = avail[p.idx];
+      var warm = p.sklad.indexOf('18')>=0 || p.sklad.indexOf('25')>=0;
+      var moc = Math.round(p.voc * 1.12 * 2.0);
+      var tagCls = warm ? 'tag-warm' : 'tag-cold';
+      var qtyCell = ok
+        ? '<div class="qty-wrap"><button class="qty-btn" onclick="changeQty('+p.idx+',-1)">−</button><input class="qty-inp" type="number" min="0" step="1" value="0" id="q'+p.idx+'" oninput="recalc()"><button class="qty-btn" onclick="changeQty('+p.idx+',1)">+</button></div>'
+        : '<span class="ptag tag-na">nedostupné</span>';
+      rows += '<tr class="pr'+(ok?'':' na')+'">'
+        +'<td><div class="pname">'+p.name+'</div></td>'
+        +'<td class="hm pcell">'+(p.baleni||'—')+'</td>'
+        +'<td class="hm pcell">'+(p.trv||'—')+'</td>'
+        +'<td class="hm"><span class="ptag '+tagCls+'">'+p.sklad+'</span></td>'
+        +'<td class="td-r pcell">'+p.voc+' Kč</td>'
+        +'<td class="td-r pcell hm">'+moc+' Kč</td>'
+        +'<td class="td-c">'+qtyCell+'</td>'
+        +'<td class="td-r"><span class="lsum" id="l'+p.idx+'">—</span></td>'
+        +'</tr>';
+    });
+    var block = document.createElement('div');
+    block.className = 'cat-block';
+    block.innerHTML = '<div class="cat-hd"><span class="cat-name">'+cat+'</span><span class="cat-cnt">'+nok+' / '+prods.length+' skladem</span></div>'
+      + thead + rows + '</tbody></table>';
+    cont.appendChild(block);
+  });
+  recalc();
+}
+
+function recalc(){
+  var total = 0, items = [];
+  P.forEach(function(p,i){
+    var el = document.getElementById('q'+i);
+    if(!el) return;
+    var q = Math.max(0, parseInt(el.value)||0);
+    var lel = document.getElementById('l'+i);
+    if(q>0){
+      var val = p.voc*q; total+=val;
+      if(lel) lel.textContent = fmt(val);
+      items.push(Object.assign({},p,{qty:q,total:val}));
+    } else { if(lel) lel.textContent='—'; }
+  });
+  document.getElementById('tv').textContent = fmt(total);
+  var dph = total * VAT;
+  document.getElementById('tsdph').textContent = total>0 ? 's DPH (12 %): '+fmt(total*(1+VAT))+'  ·  DPH: '+fmt(dph) : '';
+  var sb = document.getElementById('sb');
+  if(!items.length){
+    sb.innerHTML='<div class="sum-empty">Zatím nebyl vybrán žádný produkt.</div>';
+    return;
+  }
+  var irows = '';
+  items.forEach(function(it){
+    var n = it.name+(it.baleni?' ('+it.baleni+')':'');
+    irows += '<div class="srow"><span class="sn">'+n+' \u00d7 '+it.qty+' ks</span><span class="sv">'+fmt(it.total)+'</span></div>';
+  });
+  sb.innerHTML = '<div class="sum-items">'+irows+'</div>'
+    +'<div class="sum-sub"><span>DPH 12 %</span><span>'+fmt(dph)+'</span></div>';
+}
+
+function odeslat(){
+  var jm = document.getElementById('jmeno').value.trim();
+  var em = document.getElementById('email').value.trim();
+  if(!jm||!em){ alert('Vyplňte prosím jméno a e-mail.'); return; }
+  var items=[];
+  P.forEach(function(p,i){
+    var el=document.getElementById('q'+i); if(!el) return;
+    var q=Math.max(0,parseInt(el.value)||0);
+    if(q>0) items.push(Object.assign({},p,{qty:q,total:p.voc*q}));
+  });
+  if(!items.length){ alert('Přidejte prosím alespoň jeden produkt.'); return; }
+
+  // generate & download PDF first
+  generatePDF();
+
+  var tb=items.reduce(function(s,i){return s+i.total;},0);
+  var datum=new Date().toLocaleDateString('cs-CZ');
+  var fi=document.getElementById('firma').value.trim();
+  var tel=document.getElementById('tel').value.trim();
+  var adr=document.getElementById('adr').value.trim();
+  var poz=document.getElementById('poz').value.trim();
+  var subj='Objednávka – '+jm+(fi?' / '+fi:'')+' – '+datum;
+  var body='OBJEDNÁVKA – DIVOKÉ FARMY\n';
+  body+='══════════════════════════════\n';
+  body+='Datum: '+datum+'\n';
+  body+='Zákazník: '+jm+'\n';
+  if(fi) body+='Firma: '+fi+'\n';
+  body+='E-mail: '+em+'\n';
+  if(tel) body+='Telefon: '+tel+'\n';
+  if(adr) body+='Adresa: '+adr+'\n';
+  body+='\nOBJEDNANÉ ZBOŽÍ:\n';
+  body+='──────────────────────────────\n';
+  items.forEach(function(it){
+    body+=it.name+(it.baleni?' ('+it.baleni+')':'')+'\n';
+    body+='  Množství: '+it.qty+' ks  |  VOC/ks: '+it.voc+' Kč  |  Celkem: '+it.total.toFixed(2)+' Kč\n';
+  });
+  body+='──────────────────────────────\n';
+  body+='Celkem bez DPH: '+tb.toFixed(2)+' Kč\n';
+  body+='DPH 12 %:       '+(tb*VAT).toFixed(2)+' Kč\n';
+  body+='Celkem s DPH:   '+(tb*(1+VAT)).toFixed(2)+' Kč\n';
+  if(poz) body+='\nPoznámka: '+poz+'\n';
+  body+='\n* Cena orientační, skutečná cena u váženého zboží bude upřesněna.';
+  setTimeout(function(){
+    window.location.href='mailto:'+EMAIL_TO+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
+    setTimeout(function(){ showPdfNotice(); }, 800);
+  }, 400);
+}
+
+function showPdfNotice(){
+  var n=document.getElementById('pdf-notice');
+  if(!n) return;
+  n.style.display='flex';
+  setTimeout(function(){ n.style.opacity='1'; },10);
+  setTimeout(function(){ n.style.opacity='0'; setTimeout(function(){n.style.display='none';},400); },6000);
+}
+
+// PASSWORD
+function openPw(){
+  document.getElementById('pw-inp').value='';
+  document.getElementById('pw-err').textContent='';
+  document.getElementById('pw-screen').className='show';
+  setTimeout(function(){ document.getElementById('pw-inp').focus(); },80);
+}
+function closePw(){ document.getElementById('pw-screen').className=''; }
+function checkPw(){
+  if(document.getElementById('pw-inp').value===ADMIN_PW){
+    closePw(); openAdmin();
+  } else {
+    document.getElementById('pw-err').textContent='Nesprávné heslo.';
+    document.getElementById('pw-inp').value='';
+  }
+}
+document.getElementById('pw-inp').addEventListener('keydown',function(e){ if(e.key==='Enter') checkPw(); });
+
+// ── ADMIN ──
+function openAdmin(){ renderAdmin(''); document.getElementById('adm-ov').style.display='block'; }
+function closeAdmin(){ document.getElementById('adm-ov').style.display='none'; }
+function saveAdmin(){
+  try{
+    localStorage.setItem('df_av',JSON.stringify(avail));
+    localStorage.setItem('df_po',JSON.stringify(prodOverrides));
+    localStorage.setItem('df_arch',JSON.stringify(archived));
+    localStorage.setItem('df_del',JSON.stringify(deleted));
+    var customs=P.filter(function(p){return p._custom;}).map(function(p){
+      return {cat:p.cat,name:p.name,baleni:p.baleni,sklad:p.sklad,trv:p.trv,voc:p.voc,ok:p.ok};
+    });
+    localStorage.setItem('df_cp',JSON.stringify(customs));
+  }catch(e){}
+  closeAdmin(); buildAll();
+}
+
+function renderAdmin(q){
+  var cats=[];
+  P.forEach(function(p,i){ if(!deleted[i]&&cats.indexOf(p.cat)<0) cats.push(p.cat); });
+  var html='', ql=q.toLowerCase();
+  cats.forEach(function(cat){
+    var prods=P.map(function(p,i){return Object.assign({},p,{idx:i});})
+      .filter(function(p){ return p.cat===cat&&!deleted[p.idx]&&(!ql||p.name.toLowerCase().indexOf(ql)>=0); });
+    if(!prods.length) return;
+    html+='<div class="adm-cat"><div class="adm-clabel">'+cat+'</div>';
+    prods.forEach(function(p){
+      var i=p.idx, ok=!!avail[i], isArch=!!archived[i];
+      var esc=function(v){return (v||'').replace(/"/g,'&quot;');};
+      html+='<div class="adm-item">'
+        +'<div class="adm-row'+(isArch?' archived-row':'')+'" id="admrow'+i+'">'
+          +'<span class="adm-pname" id="admpn'+i+'">'+p.name+(isArch?' <em style="font-size:10px;opacity:.6">(archiv)</em>':'')+'</span>'
+          +'<span class="adm-bal" id="admbl'+i+'">'+(p.baleni||'')+'</span>'
+          +(isArch
+            ?'<span class="apill ap-arch">Archivováno</span>'
+            :'<span class="apill '+(ok?'ap-ok':'ap-no')+'" id="ap'+i+'">'+(ok?'Skladem':'Nedostupné')+'</span>'
+              +'<label class="tgl"><input type="checkbox" '+(ok?'checked':'')+' onchange="tog('+i+',this.checked)"><span class="tsl"></span></label>'
+          )
+          +'<div class="adm-item-actions">'
+            +'<button class="adm-edit-btn" id="admbtn'+i+'" onclick="toggleEdit('+i+')">✎ Upravit</button>'
+            +'<button class="adm-arch-btn" onclick="archiveProd('+i+')">'+(isArch?'Obnovit':'Archivovat')+'</button>'
+            +'<button class="adm-del-btn" onclick="deleteProd('+i+')">Smazat</button>'
+          +'</div>'
+        +'</div>'
+        +'<div class="adm-edit" id="admedit'+i+'">'
+          +'<div class="adm-edit-grid">'
+            +'<div class="adm-ef full"><label>Název produktu</label><input id="adn'+i+'" value="'+esc(p.name)+'"></div>'
+            +'<div class="adm-ef"><label>VOC cena (Kč bez DPH)</label><input type="number" id="adv'+i+'" value="'+p.voc+'"></div>'
+            +'<div class="adm-ef"><label>Balení / Objem</label><input id="adb'+i+'" value="'+esc(p.baleni)+'"></div>'
+            +'<div class="adm-ef"><label>Skladování</label><input id="ads'+i+'" value="'+esc(p.sklad)+'"></div>'
+            +'<div class="adm-ef"><label>Trvanlivost</label><input id="adt'+i+'" value="'+esc(p.trv)+'"></div>'
+          +'</div>'
+          +'<button class="adm-prod-save" onclick="saveProd('+i+')">Uložit změny</button>'
+        +'</div>'
+        +'</div>';
+    });
+    html+='</div>';
+  });
+  document.getElementById('adm-list').innerHTML=html||'<p style="color:#837261;font-size:13px;padding:10px 0;">Nic nenalezeno.</p>';
+}
+
+function tog(i,v){
+  avail[i]=v;
+  var el=document.getElementById('ap'+i);
+  if(el){el.textContent=v?'Skladem':'Nedostupné';el.className='apill '+(v?'ap-ok':'ap-no');}
+}
+function toggleEdit(i){
+  var edit=document.getElementById('admedit'+i),btn=document.getElementById('admbtn'+i),row=document.getElementById('admrow'+i);
+  var open=edit.classList.contains('show');
+  edit.classList.toggle('show',!open);
+  btn.classList.toggle('open',!open);
+  btn.textContent=open?'✎ Upravit':'✕ Zavřít';
+  row.style.borderRadius=open?'12px':'12px 12px 0 0';
+}
+function saveProd(i){
+  var name=document.getElementById('adn'+i).value.trim()||P[i].name;
+  var voc=parseFloat(document.getElementById('adv'+i).value)||P[i].voc;
+  var baleni=document.getElementById('adb'+i).value.trim();
+  var sklad=document.getElementById('ads'+i).value.trim();
+  var trv=document.getElementById('adt'+i).value.trim();
+  P[i].name=name;P[i].voc=voc;P[i].baleni=baleni;P[i].sklad=sklad;P[i].trv=trv;
+  prodOverrides[i]={name:name,voc:voc,baleni:baleni,sklad:sklad,trv:trv};
+  var pn=document.getElementById('admpn'+i);if(pn)pn.textContent=name;
+  var bl=document.getElementById('admbl'+i);if(bl)bl.textContent=baleni;
+  toggleEdit(i);
+}
+function archiveProd(i){
+  archived[i]=!archived[i];
+  renderAdmin(document.getElementById('adm-srch').value);
+}
+function deleteProd(i){
+  if(!confirm('Opravdu smazat produkt "'+P[i].name+'"? Tuto akci nelze vrátit zpět.')) return;
+  deleted[i]=true;
+  renderAdmin(document.getElementById('adm-srch').value);
+}
+function toggleAddForm(){
+  var f=document.getElementById('adm-add-form');
+  f.classList.toggle('show');
+  if(f.classList.contains('show')){
+    document.getElementById('anew-name').focus();
+  } else {
+    ['anew-name','anew-voc','anew-baleni','anew-sklad','anew-trv'].forEach(function(id){
+      var el=document.getElementById(id);if(el)el.value='';
+    });
+    document.getElementById('anew-cat').value='';
+  }
+}
+function addProd(){
+  var name=document.getElementById('anew-name').value.trim();
+  var cat=document.getElementById('anew-cat').value;
+  var voc=parseFloat(document.getElementById('anew-voc').value)||0;
+  var baleni=document.getElementById('anew-baleni').value.trim();
+  var sklad=document.getElementById('anew-sklad').value.trim();
+  var trv=document.getElementById('anew-trv').value.trim();
+  if(!name||!cat||!voc){alert('Vyplňte prosím název, kategorii a cenu.');return;}
+  var np={cat:cat,name:name,baleni:baleni,sklad:sklad||'lednice',trv:trv,voc:voc,ok:true,_custom:true};
+  P.push(np);
+  customProds.push(np);
+  avail[P.length-1]=true;
+  toggleAddForm();
+  renderAdmin(document.getElementById('adm-srch').value);
+}
+document.getElementById('adm-srch').addEventListener('input',function(){renderAdmin(this.value);});
+
+// ── PDF ──
+function generatePDF(){
+  var jm=document.getElementById('jmeno').value.trim();
+  var em=document.getElementById('email').value.trim();
+  if(!jm||!em){alert('Vyplňte prosím jméno a e-mail.');return;}
+  var items=[];
+  P.forEach(function(p,i){
+    var el=document.getElementById('q'+i);if(!el)return;
+    var q=Math.max(0,parseInt(el.value)||0);
+    if(q>0)items.push(Object.assign({},p,{qty:q,total:p.voc*q}));
+  });
+  if(!items.length){alert('Přidejte prosím alespoň jeden produkt.');return;}
+  var tb=items.reduce(function(s,it){return s+it.total;},0);
+  var datum=new Date().toLocaleDateString('cs-CZ');
+  var fi=document.getElementById('firma').value.trim();
+  var tel=document.getElementById('tel').value.trim();
+  var adr=document.getElementById('adr').value.trim();
+  var poz=document.getElementById('poz').value.trim();
+
+  var {jsPDF}=window.jspdf;
+  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+
+  // header bar
+  doc.setFillColor(80,63,55);
+  doc.rect(0,0,210,22,'F');
+  doc.setTextColor(220,203,188);
+  doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('DIVOKE FARMY',14,14);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text('Objednavka  |  '+datum,14,20);
+  doc.text('DF obchodni s.r.o.  |  adam@divokefarmy.cz  |  +420 777 186 246',210-14,20,{align:'right'});
+
+  // customer block
+  doc.setTextColor(30,30,30);
+  var y=32;
+  doc.setFontSize(9);doc.setFont('helvetica','bold');
+  doc.text('ZAKAZNIK',14,y);
+  doc.setDrawColor(131,114,97);doc.setLineWidth(0.3);doc.line(14,y+2,90,y+2);
+  y+=7;
+  doc.setFont('helvetica','normal');
+  var info=[jm];
+  if(fi)info.push(fi);
+  info.push('E-mail: '+em);
+  if(tel)info.push('Telefon: '+tel);
+  if(adr)info.push('Adresa: '+adr);
+  info.forEach(function(l){doc.text(l,14,y);y+=5;});
+
+  y+=4;
+  // products table
+  doc.autoTable({
+    startY:y,
+    head:[['Produkt','Objem','Trvanlivost','Skladovani','Mnozstvi','VOC/ks','Celkem']],
+    body:items.map(function(it){return[
+      it.name,
+      it.baleni||'—',
+      it.trv||'—',
+      it.sklad||'—',
+      it.qty+' ks',
+      it.voc+' Kc',
+      it.total.toFixed(2)+' Kc'
+    ];}),
+    headStyles:{fillColor:[80,63,55],textColor:[220,203,188],fontStyle:'bold',fontSize:8},
+    bodyStyles:{fontSize:8,textColor:[30,30,30]},
+    alternateRowStyles:{fillColor:[240,235,228]},
+    columnStyles:{0:{cellWidth:55},4:{halign:'center'},5:{halign:'right'},6:{halign:'right',fontStyle:'bold'}},
+    margin:{left:14,right:14},
+    styles:{lineColor:[200,188,175],lineWidth:0.2}
+  });
+
+  var fy=doc.lastAutoTable.finalY+6;
+  // totals
+  doc.setFillColor(218,203,188);
+  doc.rect(14,fy,182,22,'F');
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(131,114,97);
+  doc.text('Celkem bez DPH:',120,fy+7);
+  doc.text('DPH 12 %:',120,fy+13);
+  doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
+  doc.text(tb.toFixed(2)+' Kc',196,fy+7,{align:'right'});
+  doc.text((tb*VAT).toFixed(2)+' Kc',196,fy+13,{align:'right'});
+  doc.setFontSize(11);
+  doc.text('CELKEM S DPH:',120,fy+21);
+  doc.text((tb*(1+VAT)).toFixed(2)+' Kc',196,fy+21,{align:'right'});
+
+  if(poz){
+    var py=fy+30;
+    doc.setFontSize(8);doc.setFont('helvetica','italic');doc.setTextColor(131,114,97);
+    doc.text('Poznamka: '+poz,14,py,{maxWidth:182});
+  }
+
+  // footer
+  doc.setFillColor(80,63,55);
+  doc.rect(0,285,210,12,'F');
+  doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(220,203,188);
+  doc.text('DF obchodni s.r.o.  |  ICO: 29279313  |  Sebrov 195, 679 22 Lipuvka  |  divokefarmy.cz',105,292,{align:'center'});
+  doc.text('* Cena orientacni, skutecna cena u vazeneho zbozi bude upresnena.',105,296,{align:'center'});
+
+  var fn='objednavka-divokefarmy-'+datum.replace(/\.\s*/g,'-').replace(/-$/,'')+'.pdf';
+  doc.save(fn);
+}
+
+// DATE
+document.getElementById('dnes').textContent=new Date().toLocaleDateString('cs-CZ',{day:'numeric',month:'long',year:'numeric'});
+
+buildAll();
+
+</script>
+</body>
+</html>
