@@ -691,7 +691,8 @@ function potvrditObjednavku(){
       emailjs.send(EJS_SERVICE, EJS_TEMPLATE, {
         customer_name: jm, company: fi||'—', email: em, phone: tel||'—',
         items_text: itemsTxt, total: tb.toFixed(2), note: poz||'—'
-      }).catch(function(e){ console.warn('EmailJS:', e); });
+      }).then(function(){ alert('EMAIL ODESLÁN OK'); })
+        .catch(function(e){ alert('EMAIL CHYBA: '+JSON.stringify(e)); });
     }
     // Zobrazit potvrzení
     var rows='<div class="confirm-row"><span class="cl">Zákazník</span><span class="cv">'+jm+'</span></div>';
