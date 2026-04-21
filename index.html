@@ -6,6 +6,7 @@
 <title>Objednávkový formulář – Divoké Farmy</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -194,6 +195,36 @@ footer strong{color:var(--t2);font-weight:800;}
 .ap-arch{background:rgba(131,114,97,0.15);color:#837261;}
 .adm-row.archived-row{opacity:0.55;}
 
+/* ── Admin tabs ── */
+.adm-tabs{display:flex;gap:6px;margin-bottom:20px;}
+.adm-tab{padding:8px 18px;border-radius:10px;border:1px solid rgba(80,63,55,0.20);background:rgba(255,255,255,0.35);color:#503f37;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;font-family:'Inter',sans-serif;}
+.adm-tab.active{background:#503f37;color:#DACBBC;border-color:#503f37;}
+.adm-tab:hover:not(.active){background:rgba(255,255,255,0.55);}
+/* ── Orders ── */
+.orders-list{display:flex;flex-direction:column;gap:10px;}
+.order-card{background:rgba(255,255,255,0.45);border:1px solid rgba(80,63,55,0.15);border-radius:12px;overflow:hidden;}
+.order-hd{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background .15s;flex-wrap:wrap;}
+.order-hd:hover{background:rgba(255,255,255,0.30);}
+.order-date{font-size:11px;color:#837261;font-weight:600;min-width:72px;}
+.order-name{flex:1;font-size:13px;font-weight:700;color:#1e1e1e;min-width:100px;}
+.order-total{font-size:13px;font-weight:800;color:#503f37;white-space:nowrap;}
+.order-status{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;white-space:nowrap;}
+.st-nova{background:rgba(122,158,142,0.25);color:#2e5c4e;}
+.st-vyrizuje{background:rgba(131,114,97,0.20);color:#503f37;}
+.st-vyrizena{background:rgba(80,63,55,0.12);color:#837261;}
+.order-body{display:none;padding:12px 16px 14px;border-top:1px solid rgba(80,63,55,0.12);}
+.order-body.show{display:block;}
+.order-info{font-size:12px;color:#503f37;margin-bottom:10px;line-height:1.8;font-weight:600;}
+.order-items-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;}
+.order-items-tbl th{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#837261;padding:5px 8px;text-align:left;background:rgba(80,63,55,0.08);font-weight:800;}
+.order-items-tbl td{padding:5px 8px;border-bottom:1px solid rgba(80,63,55,0.07);color:#1e1e1e;font-weight:600;}
+.order-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.st-btn{padding:5px 14px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid rgba(80,63,55,0.20);background:rgba(255,255,255,0.55);color:#503f37;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
+.st-btn:hover{background:#503f37;color:#DACBBC;border-color:#503f37;}
+.st-btn.act{background:#503f37;color:#DACBBC;border-color:#503f37;}
+.orders-msg{font-size:13px;color:#837261;text-align:center;padding:20px 0;font-style:italic;font-weight:500;}
+.orders-reload{display:block;margin:14px auto 0;padding:8px 18px;background:rgba(80,63,55,0.10);border:1px solid rgba(80,63,55,0.18);color:#503f37;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
+.orders-reload:hover{background:#503f37;color:#DACBBC;}
 @media(max-width:620px){
   .cgrid{grid-template-columns:1fr;}
   .cgrid .full{grid-column:1;}
@@ -300,32 +331,42 @@ footer strong{color:var(--t2);font-weight:800;}
   <div class="adm-box">
     <div class="adm-hd">
       <div>
-        <div class="adm-title">Správa dostupnosti produktů</div>
-        <div class="adm-sub">Přepněte produkty — změna se projeví po uložení</div>
+        <div class="adm-title">Správa</div>
+        <div class="adm-sub">Produkty · Příchozí objednávky</div>
       </div>
       <button class="adm-close" onclick="closeAdmin()">✕ Zavřít</button>
     </div>
-    <div class="adm-top">
-      <input type="text" id="adm-srch" placeholder="Hledat produkt..." style="flex:1;margin-bottom:0;">
-      <button class="adm-add-btn" onclick="toggleAddForm()">+ Přidat produkt</button>
+    <div class="adm-tabs">
+      <button class="adm-tab active" id="tab-products" onclick="switchTab('products')">Produkty</button>
+      <button class="adm-tab" id="tab-orders" onclick="switchTab('orders')">Objednávky</button>
     </div>
-    <div class="adm-add-form" id="adm-add-form">
-      <h4>Nový produkt</h4>
-      <div class="adm-add-grid">
-        <div class="adm-af full"><label>Název produktu *</label><input id="anew-name" placeholder="např. Uzená kachna"></div>
-        <div class="adm-af"><label>Kategorie *</label><select id="anew-cat"><option value="">— vyberte —</option><option>Paštiky a pomazánky</option><option>Vývary</option><option>Klobásy a salámy</option><option>Párky a uzeniny</option><option>Špeky</option><option>Ostatní</option></select></div>
-        <div class="adm-af"><label>VOC cena (Kč bez DPH) *</label><input type="number" id="anew-voc" placeholder="0"></div>
-        <div class="adm-af"><label>Balení / Objem</label><input id="anew-baleni" placeholder="např. 200 g"></div>
-        <div class="adm-af"><label>Skladování</label><input id="anew-sklad" placeholder="např. lednice"></div>
-        <div class="adm-af"><label>Trvanlivost</label><input id="anew-trv" placeholder="např. 4 měsíce"></div>
+    <div id="pane-products">
+      <div class="adm-top">
+        <input type="text" id="adm-srch" placeholder="Hledat produkt..." style="flex:1;margin-bottom:0;">
+        <button class="adm-add-btn" onclick="toggleAddForm()">+ Přidat produkt</button>
       </div>
-      <div class="adm-add-actions">
-        <button class="adm-add-confirm" onclick="addProd()">Přidat produkt</button>
-        <button class="adm-add-cancel" onclick="toggleAddForm()">Zrušit</button>
+      <div class="adm-add-form" id="adm-add-form">
+        <h4>Nový produkt</h4>
+        <div class="adm-add-grid">
+          <div class="adm-af full"><label>Název produktu *</label><input id="anew-name" placeholder="např. Uzená kachna"></div>
+          <div class="adm-af"><label>Kategorie *</label><select id="anew-cat"><option value="">— vyberte —</option><option>Paštiky a pomazánky</option><option>Vývary</option><option>Klobásy a salámy</option><option>Párky a uzeniny</option><option>Špeky</option><option>Ostatní</option></select></div>
+          <div class="adm-af"><label>VOC cena (Kč bez DPH) *</label><input type="number" id="anew-voc" placeholder="0"></div>
+          <div class="adm-af"><label>Balení / Objem</label><input id="anew-baleni" placeholder="např. 200 g"></div>
+          <div class="adm-af"><label>Skladování</label><input id="anew-sklad" placeholder="např. lednice"></div>
+          <div class="adm-af"><label>Trvanlivost</label><input id="anew-trv" placeholder="např. 4 měsíce"></div>
+        </div>
+        <div class="adm-add-actions">
+          <button class="adm-add-confirm" onclick="addProd()">Přidat produkt</button>
+          <button class="adm-add-cancel" onclick="toggleAddForm()">Zrušit</button>
+        </div>
       </div>
+      <div id="adm-list"></div>
+      <button class="adm-save" onclick="saveAdmin()">Uložit a zavřít</button>
     </div>
-    <div id="adm-list"></div>
-    <button class="adm-save" onclick="saveAdmin()">Uložit a zavřít</button>
+    <div id="pane-orders" style="display:none;">
+      <div id="orders-list"><div class="orders-msg">Načítám objednávky…</div></div>
+      <button class="orders-reload" onclick="loadOrders()">↻ Obnovit seznam</button>
+    </div>
   </div>
 </div>
 
@@ -460,6 +501,11 @@ footer strong{color:var(--t2);font-weight:800;}
 const ADMIN_PW = 'farmy2025';
 const EMAIL_TO = 'adam@divokefarmy.cz';
 const VAT = 0.12;
+
+// ── Supabase ──
+const _SUPA_URL = 'https://anblqlnhjddosmcieuuc.supabase.co';
+const _SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFuYmxxbG5oamRkb3NtY2lldXVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3ODM0ODMsImV4cCI6MjA5MjM1OTQ4M30.wBOfZDVrF5dmBbof3v5VFqxL2fRIvlmomUeXqMudnJY';
+const _db = window.supabase.createClient(_SUPA_URL, _SUPA_KEY);
 const P = [{"cat": "Paštiky a pomazánky", "name": "Hrubá vepřová paštika", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 63, "ok": false}, {"cat": "Paštiky a pomazánky", "name": "Husí paštika", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 75, "ok": true}, {"cat": "Paštiky a pomazánky", "name": "Jemná vepřová paštika", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 63, "ok": true}, {"cat": "Paštiky a pomazánky", "name": "Kachní játrová paštika", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 75, "ok": true}, {"cat": "Paštiky a pomazánky", "name": "Polohrubá z divočáka", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 69, "ok": true}, {"cat": "Paštiky a pomazánky", "name": "Slaninový džem", "baleni": "120 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 63, "ok": false}, {"cat": "Paštiky a pomazánky", "name": "Pikantní topinková směs", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 51, "ok": false}, {"cat": "Vývary", "name": "Hovězí vývar", "baleni": "165 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 30, "ok": true}, {"cat": "Vývary", "name": "Vepřový vývar", "baleni": "165 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 30, "ok": true}, {"cat": "Vývary", "name": "Drůbeží vývar", "baleni": "165 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 30, "ok": true}, {"cat": "Klobásy a salámy", "name": "Klobása z divočáka – zelený pepř", "baleni": "120 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 50, "ok": false}, {"cat": "Klobásy a salámy", "name": "Klobása z Gruntu – 1 kus", "baleni": "100 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 31, "ok": true}, {"cat": "Klobásy a salámy", "name": "Klobása z Gruntu – pár", "baleni": "200 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 62, "ok": true}, {"cat": "Klobásy a salámy", "name": "Klobása Pikoška – 1 kus", "baleni": "100 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 31, "ok": true}, {"cat": "Klobásy a salámy", "name": "Klobása Pikoška – pár", "baleni": "200 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 62, "ok": true}, {"cat": "Klobásy a salámy", "name": "Podkova s goudou", "baleni": "130 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 55, "ok": true}, {"cat": "Klobásy a salámy", "name": "S jamajským rumem a brusinkami", "baleni": "120 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 50, "ok": true}, {"cat": "Klobásy a salámy", "name": "S vlašskými ořechy", "baleni": "120 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 50, "ok": true}, {"cat": "Klobásy a salámy", "name": "Španělka", "baleni": "130 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 55, "ok": true}, {"cat": "Klobásy a salámy", "name": "Jelení huhuchilli", "baleni": "115 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 68, "ok": false}, {"cat": "Klobásy a salámy", "name": "Hovězí japaleno cheddar", "baleni": "120 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 68, "ok": false}, {"cat": "Párky a uzeniny", "name": "Špekáček 2 kusy", "baleni": "230–250 g", "sklad": "lednice", "trv": "21 dní", "voc": 38, "ok": false}, {"cat": "Párky a uzeniny", "name": "Špekáček 4 kusy", "baleni": "", "sklad": "lednice", "trv": "", "voc": 76, "ok": false}, {"cat": "Párky a uzeniny", "name": "Vepřový párek", "baleni": "370–400 g", "sklad": "lednice", "trv": "21 dní", "voc": 100, "ok": true}, {"cat": "Párky a uzeniny", "name": "Vranovská anglická slanina kus", "baleni": "250 g", "sklad": "lednice", "trv": "21 dní", "voc": 70, "ok": true}, {"cat": "Párky a uzeniny", "name": "Vranovská anglická slanina krájená", "baleni": "200 g", "sklad": "lednice", "trv": "14 dní", "voc": 56, "ok": true}, {"cat": "Ostatní", "name": "Medová šunka", "baleni": "100 g", "sklad": "lednice", "trv": "7 dní", "voc": 23, "ok": true}, {"cat": "Ostatní", "name": "Sádlo malé", "baleni": "600 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 63, "ok": true}, {"cat": "Ostatní", "name": "Sekaná česnek", "baleni": "500 g", "sklad": "lednice", "trv": "14 dní", "voc": 91, "ok": true}, {"cat": "Ostatní", "name": "Škvarková pomazánka", "baleni": "200 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 34, "ok": true}, {"cat": "Ostatní", "name": "Škvarky v sádle menší", "baleni": "365 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 67, "ok": true}, {"cat": "Ostatní", "name": "Kachní chipsy", "baleni": "40 g", "sklad": "do 25°C", "trv": "4 měsíce", "voc": 57, "ok": true}, {"cat": "Ostatní", "name": "Jerky vepřové", "baleni": "30 g", "sklad": "do 25°C", "trv": "4 měsíce", "voc": 52, "ok": false}, {"cat": "Špeky", "name": "Špek farmářský", "baleni": "200 g", "sklad": "lednice", "trv": "3 měsíce", "voc": 40, "ok": true}, {"cat": "Špeky", "name": "Paprikový špek", "baleni": "200 g", "sklad": "lednice", "trv": "3 měsíce", "voc": 40, "ok": true}, {"cat": "Špeky", "name": "Zauzený špek", "baleni": "200 g", "sklad": "lednice", "trv": "3 měsíce", "voc": 43, "ok": true}];
 // ── state ──
 let avail = {};
@@ -587,6 +633,18 @@ function odeslat(){
   var tel=document.getElementById('tel').value.trim();
   var adr=document.getElementById('adr').value.trim();
   var poz=document.getElementById('poz').value.trim();
+  // Uložit do Supabase
+  _db.from('orders').insert([{
+    customer_name: jm,
+    company: fi||null,
+    email: em,
+    phone: tel||null,
+    address: adr||null,
+    note: poz||null,
+    items: items.map(function(it){ return {name:it.name,baleni:it.baleni||'',qty:it.qty,voc:it.voc,total:it.total}; }),
+    total_without_vat: tb
+  }]).then(function(res){ if(res.error) console.warn('Supabase insert error:', res.error.message); });
+
   var subj='Objednávka – '+jm+(fi?' / '+fi:'')+' – '+datum;
   var body='OBJEDNÁVKA – DIVOKÉ FARMY\n';
   body+='══════════════════════════════\n';
@@ -641,8 +699,94 @@ function checkPw(){
 document.getElementById('pw-inp').addEventListener('keydown',function(e){ if(e.key==='Enter') checkPw(); });
 
 // ── ADMIN ──
-function openAdmin(){ renderAdmin(''); document.getElementById('adm-ov').style.display='block'; }
+function openAdmin(){
+  switchTab('products');
+  renderAdmin('');
+  document.getElementById('adm-ov').style.display='block';
+}
 function closeAdmin(){ document.getElementById('adm-ov').style.display='none'; }
+
+function switchTab(tab){
+  document.getElementById('tab-products').classList.toggle('active', tab==='products');
+  document.getElementById('tab-orders').classList.toggle('active', tab==='orders');
+  document.getElementById('pane-products').style.display = tab==='products' ? 'block' : 'none';
+  document.getElementById('pane-orders').style.display = tab==='orders' ? 'block' : 'none';
+  if(tab==='orders') loadOrders();
+}
+
+// ── Orders ──
+var _orders = [];
+function loadOrders(){
+  document.getElementById('orders-list').innerHTML = '<div class="orders-msg">Načítám objednávky…</div>';
+  _db.from('orders').select('*').order('created_at',{ascending:false}).then(function(res){
+    if(res.error){ document.getElementById('orders-list').innerHTML='<div class="orders-msg">Chyba: '+res.error.message+'</div>'; return; }
+    _orders = res.data || [];
+    renderOrders();
+  });
+}
+
+function renderOrders(){
+  var list = document.getElementById('orders-list');
+  if(!_orders.length){ list.innerHTML='<div class="orders-msg">Zatím žádné objednávky.</div>'; return; }
+  var stLabel={nova:'Nová',vyrizuje_se:'Vyřizuje se',vyrizena:'Vyřízena'};
+  var stCls={nova:'st-nova',vyrizuje_se:'st-vyrizuje',vyrizena:'st-vyrizena'};
+  var html='<div class="orders-list">';
+  _orders.forEach(function(o,idx){
+    var d=new Date(o.created_at).toLocaleDateString('cs-CZ');
+    var st=o.status||'nova';
+    var items=o.items||[];
+    var irows='';
+    items.forEach(function(it){
+      irows+='<tr><td>'+(it.name||'')+(it.baleni?' ('+it.baleni+')':'')+'</td><td style="text-align:center">'+it.qty+' ks</td><td style="text-align:right;font-weight:800">'+it.total.toFixed(2)+' Kč</td></tr>';
+    });
+    var info='';
+    if(o.company) info+='<strong>'+o.company+'</strong> · ';
+    info+=o.email;
+    if(o.phone) info+=' · '+o.phone;
+    if(o.address) info+='<br>'+o.address;
+    if(o.note) info+='<br><em>'+o.note+'</em>';
+    html+='<div class="order-card" id="oc'+idx+'">'
+      +'<div class="order-hd" onclick="toggleOrder('+idx+')">'
+        +'<span class="order-date">'+d+'</span>'
+        +'<span class="order-name">'+o.customer_name+'</span>'
+        +'<span class="order-total">'+o.total_without_vat.toFixed(2)+' Kč</span>'
+        +'<span class="order-status '+(stCls[st]||'st-nova')+'" id="ostlbl'+idx+'">'+(stLabel[st]||'Nová')+'</span>'
+      +'</div>'
+      +'<div class="order-body" id="ob'+idx+'">'
+        +'<div class="order-info">'+info+'</div>'
+        +'<table class="order-items-tbl"><tr><th>Produkt</th><th style="text-align:center">Množství</th><th style="text-align:right">Celkem</th></tr>'+irows+'</table>'
+        +'<div class="order-actions">'
+          +'<button class="st-btn'+(st==='nova'?' act':'')+'" onclick="setOrderStatus(\''+o.id+'\','+idx+',\'nova\')">Nová</button>'
+          +'<button class="st-btn'+(st==='vyrizuje_se'?' act':'')+'" onclick="setOrderStatus(\''+o.id+'\','+idx+',\'vyrizuje_se\')">Vyřizuje se</button>'
+          +'<button class="st-btn'+(st==='vyrizena'?' act':'')+'" onclick="setOrderStatus(\''+o.id+'\','+idx+',\'vyrizena\')">Vyřízena</button>'
+        +'</div>'
+      +'</div>'
+    +'</div>';
+  });
+  html+='</div>';
+  list.innerHTML=html;
+}
+
+function toggleOrder(idx){
+  document.getElementById('ob'+idx).classList.toggle('show');
+}
+
+function setOrderStatus(id,idx,status){
+  var stLabel={nova:'Nová',vyrizuje_se:'Vyřizuje se',vyrizena:'Vyřízena'};
+  var stCls={nova:'st-nova',vyrizuje_se:'st-vyrizuje',vyrizena:'st-vyrizena'};
+  _db.from('orders').update({status:status}).eq('id',id).then(function(res){
+    if(res.error){ alert('Chyba: '+res.error.message); return; }
+    _orders[idx].status=status;
+    var lbl=document.getElementById('ostlbl'+idx);
+    if(lbl){ lbl.textContent=stLabel[status]; lbl.className='order-status '+(stCls[status]||'st-nova'); }
+    var card=document.getElementById('oc'+idx);
+    if(card){
+      var btns=card.querySelectorAll('.st-btn');
+      var sts=['nova','vyrizuje_se','vyrizena'];
+      btns.forEach(function(btn,bi){ btn.classList.toggle('act',sts[bi]===status); });
+    }
+  });
+}
 function saveAdmin(){
   try{
     localStorage.setItem('df_av',JSON.stringify(avail));
