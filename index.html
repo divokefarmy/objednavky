@@ -239,6 +239,37 @@ footer strong{color:var(--t2);font-weight:800;}
 .orders-msg{font-size:13px;color:#837261;text-align:center;padding:20px 0;font-style:italic;font-weight:500;}
 .orders-reload{display:block;margin:14px auto 0;padding:8px 18px;background:rgba(80,63,55,0.10);border:1px solid rgba(80,63,55,0.18);color:#503f37;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
 .orders-reload:hover{background:#503f37;color:#DACBBC;}
+/* ── Light theme ── */
+body.light{--bg:#f5f0ea;--bg2:#ede7df;--bg3:#e4dbd0;--bg4:#dbd0c4;--border:rgba(80,63,55,0.18);--b2:rgba(80,63,55,0.30);--text:#1e1e1e;--t2:#503f37;--t3:#837261;--gold:#503f37;--gold2:#6b5548;--gold3:#3a2f2a;--gdim:rgba(80,63,55,0.08);--shadow:0 4px 24px rgba(0,0,0,0.09);--shadow-gold:0 0 0 1px rgba(80,63,55,0.15),0 8px 32px rgba(0,0,0,0.12);}
+body.light .summary,body.light .pnote{background:#fff;border-color:rgba(80,63,55,0.12);}
+body.light .prod-card{background:#fff;}
+body.light .cat-hd{background:linear-gradient(180deg,#e8dfd5,#f0e8e0);}
+body.light .cat-block{background:#f5f0ea;}
+body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e;}
+/* ── Theme toggle ── */
+.btn-theme{background:var(--bg3);border:1px solid var(--border);color:var(--t3);padding:9px 13px;border-radius:10px;cursor:pointer;font-size:16px;transition:all .2s;line-height:1;font-family:'Inter',sans-serif;}
+.btn-theme:hover{border-color:var(--gold);background:var(--gdim);}
+/* ── Product cards ── */
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:16px 18px 20px;}
+.prod-card{background:#DACBBC;border:1px solid rgba(80,63,55,0.12);border-radius:16px;padding:18px 16px;display:flex;flex-direction:column;gap:8px;transition:transform .2s,box-shadow .2s;position:relative;}
+.prod-card:not(.unavail):hover{transform:translateY(-3px);box-shadow:0 10px 32px rgba(0,0,0,0.18);}
+.prod-card.unavail{opacity:0.40;}
+.prod-card-name{font-size:14px;font-weight:800;color:#1e1e1e;line-height:1.35;}
+.prod-card-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:1px;}
+.prod-na-badge{font-size:10px;padding:3px 9px;border-radius:20px;font-weight:700;background:rgba(192,102,90,0.15);color:#a04438;border:1px solid rgba(192,102,90,0.22);}
+.prod-card-meta{font-size:11px;color:#837261;font-weight:600;display:flex;flex-wrap:wrap;gap:4px 10px;margin-bottom:2px;}
+.prod-card-price{font-size:21px;font-weight:800;color:#503f37;margin-top:auto;padding-top:6px;}
+.prod-price-per{font-size:12px;font-weight:600;color:#837261;}
+.prod-card-qty-row{display:flex;align-items:center;gap:6px;}
+.prod-card-total{font-size:12px;font-weight:800;color:#503f37;text-align:right;min-height:15px;}
+/* ── Floating bar ── */
+#float-bar{position:fixed;bottom:0;left:0;right:0;background:#503f37;padding:13px 24px;display:flex;align-items:center;justify-content:space-between;z-index:900;box-shadow:0 -4px 32px rgba(0,0,0,0.4);transform:translateY(110%);transition:transform .32s cubic-bezier(.4,0,.2,1);}
+#float-bar.show{transform:translateY(0);}
+.float-left{display:flex;flex-direction:column;gap:1px;}
+.float-cnt{font-size:11px;color:rgba(218,203,188,0.65);font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
+.float-amt{font-size:22px;font-weight:800;color:#DACBBC;letter-spacing:-.01em;}
+.float-btn{background:#DACBBC;color:#503f37;border:none;border-radius:11px;padding:12px 22px;font-size:14px;font-weight:800;cursor:pointer;transition:all .18s;font-family:'Inter',sans-serif;letter-spacing:.04em;white-space:nowrap;}
+.float-btn:hover{background:#fff;transform:scale(1.04);}
 /* ── Remember me ── */
 .remember-bar{display:flex;align-items:center;gap:16px;margin:-8px 0 30px;padding:0 2px;}
 .remember-check{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--t3);font-weight:600;user-select:none;}
@@ -470,7 +501,10 @@ footer strong{color:var(--t2);font-weight:800;}
 </svg></div>
     <div class="topbar-r">
       <div class="topbar-date" id="dnes"></div>
-      <button class="btn-adm" onclick="openPw()">⚙ Správa skladu</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Přepnout téma">☀</button>
+        <button class="btn-adm" onclick="openPw()">⚙ Správa skladu</button>
+      </div>
     </div>
   </div>
 
@@ -513,6 +547,14 @@ footer strong{color:var(--t2);font-weight:800;}
     <button class="pdf-btn" onclick="generatePDF()">Stáhnout PDF</button>
   </div>
 
+
+  <div id="float-bar">
+    <div class="float-left">
+      <span class="float-cnt" id="float-cnt">0 ks</span>
+      <span class="float-amt" id="float-amt">0 Kč</span>
+    </div>
+    <button class="float-btn" onclick="potvrditObjednavku()">Potvrdit objednávku →</button>
+  </div>
 
   <div id="confirm-modal">
     <div class="confirm-card">
@@ -582,40 +624,30 @@ function buildAll(){
       .filter(function(p){ return p.cat===cat && !deleted[p.idx] && !archived[p.idx]; });
     if(!prods.length) return;
     var nok = prods.filter(function(p){ return avail[p.idx]; }).length;
-    var thead = '<table class="pt"><thead><tr>'
-      +'<th>Produkt</th>'
-      +'<th class="hm">Objem</th>'
-      +'<th class="hm">Trvanlivost</th>'
-      +'<th class="hm">Skladování</th>'
-      +'<th class="r">VOC bez DPH</th>'
-      +'<th class="r hm">Dop. MOC</th>'
-      +'<th class="c">Množství</th>'
-      +'<th class="r">Mezisoučet</th>'
-      +'</tr></thead><tbody>';
-    var rows = '';
+    var cards = '';
     prods.forEach(function(p){
       var ok = avail[p.idx];
       var warm = p.sklad.indexOf('18')>=0 || p.sklad.indexOf('25')>=0;
-      var moc = Math.round(p.voc * 1.12 * 2.0);
       var tagCls = warm ? 'tag-warm' : 'tag-cold';
-      var qtyCell = ok
-        ? '<div class="qty-wrap"><button class="qty-btn" onclick="changeQty('+p.idx+',-1)">−</button><input class="qty-inp" type="number" min="0" step="1" value="0" id="q'+p.idx+'" oninput="recalc()"><button class="qty-btn" onclick="changeQty('+p.idx+',1)">+</button></div>'
-        : '<span class="ptag tag-na">nedostupné</span>';
-      rows += '<tr class="pr'+(ok?'':' na')+'">'
-        +'<td><div class="pname">'+p.name+'</div></td>'
-        +'<td class="hm pcell">'+(p.baleni||'—')+'</td>'
-        +'<td class="hm pcell">'+(p.trv||'—')+'</td>'
-        +'<td class="hm"><span class="ptag '+tagCls+'">'+p.sklad+'</span></td>'
-        +'<td class="td-r pcell">'+p.voc+' Kč</td>'
-        +'<td class="td-r pcell hm">'+moc+' Kč</td>'
-        +'<td class="td-c">'+qtyCell+'</td>'
-        +'<td class="td-r"><span class="lsum" id="l'+p.idx+'">—</span></td>'
-        +'</tr>';
+      var meta = '';
+      if(p.baleni) meta += '<span>'+p.baleni+'</span>';
+      if(p.trv) meta += '<span>'+p.trv+'</span>';
+      cards += '<div class="prod-card'+(ok?'':' unavail')+'">'
+        +'<div class="prod-card-name">'+p.name+'</div>'
+        +'<div class="prod-card-tags">'
+          +'<span class="ptag '+tagCls+'">'+p.sklad+'</span>'
+          +(ok?'':'<span class="prod-na-badge">Nedostupné</span>')
+        +'</div>'
+        +(meta?'<div class="prod-card-meta">'+meta+'</div>':'')
+        +'<div class="prod-card-price">'+p.voc+' Kč<span class="prod-price-per"> / ks</span></div>'
+        +(ok?'<div class="prod-card-qty-row"><button class="qty-btn" onclick="changeQty('+p.idx+',-1)">−</button><input class="qty-inp" type="number" min="0" step="1" value="0" id="q'+p.idx+'" oninput="recalc()"><button class="qty-btn" onclick="changeQty('+p.idx+',1)">+</button></div>':'')
+        +'<div class="prod-card-total" id="l'+p.idx+'"></div>'
+        +'</div>';
     });
     var block = document.createElement('div');
     block.className = 'cat-block';
     block.innerHTML = '<div class="cat-hd"><span class="cat-name">'+cat+'</span><span class="cat-cnt">'+nok+' / '+prods.length+' skladem</span></div>'
-      + thead + rows + '</tbody></table>';
+      +'<div class="prod-grid">'+cards+'</div>';
     cont.appendChild(block);
   });
   recalc();
@@ -637,6 +669,16 @@ function recalc(){
   document.getElementById('tv').textContent = fmt(total);
   var dph = total * VAT;
   document.getElementById('tsdph').textContent = total>0 ? 's DPH (12 %): '+fmt(total*(1+VAT))+'  ·  DPH: '+fmt(dph) : '';
+  // floating bar
+  var fb=document.getElementById('float-bar');
+  if(fb){
+    if(total>0){
+      var totalQty=items.reduce(function(s,it){return s+it.qty;},0);
+      document.getElementById('float-cnt').textContent=totalQty+' ks';
+      document.getElementById('float-amt').textContent=fmt(total);
+      fb.classList.add('show');
+    } else { fb.classList.remove('show'); }
+  }
   var sb = document.getElementById('sb');
   if(!items.length){
     sb.innerHTML='<div class="sum-empty">Zatím nebyl vybrán žádný produkt.</div>';
@@ -1131,8 +1173,17 @@ function generatePDF(){
   doc.save(fn);
 }
 
+function toggleTheme(){
+  var light=document.body.classList.toggle('light');
+  localStorage.setItem('df_theme',light?'light':'dark');
+  document.getElementById('btn-theme').textContent=light?'🌙':'☀';
+}
+
 // DATE
 document.getElementById('dnes').textContent=new Date().toLocaleDateString('cs-CZ',{day:'numeric',month:'long',year:'numeric'});
+
+// Init theme
+(function(){ if(localStorage.getItem('df_theme')==='light'){ document.body.classList.add('light'); document.getElementById('btn-theme').textContent='🌙'; } })();
 
 // Remember-me autofill
 (function(){
