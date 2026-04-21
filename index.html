@@ -164,11 +164,24 @@ table.pt td{padding:14px 16px;vertical-align:middle;}
 footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--t3);line-height:2.5;font-weight:600;}
 footer strong{color:var(--t2);font-weight:800;}
 
-/* ── PDF button ── */
+/* ── Buttons ── */
 .btn-row{display:flex;gap:12px;margin-bottom:12px;}
 .send-btn{flex:2;}
 .pdf-btn{flex:1;padding:17px;background:#DACBBC;color:#1e1e1e;border:1px solid rgba(80,63,55,0.25);border-radius:14px;font-size:15px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .25s;font-family:'Inter',sans-serif;}
 .pdf-btn:hover{background:#cfc0ae;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.15);}
+/* ── Confirm modal ── */
+#confirm-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:3000;align-items:center;justify-content:center;padding:20px;}
+#confirm-modal.show{display:flex;}
+.confirm-card{width:100%;max-width:420px;background:#DACBBC;border-radius:24px;padding:40px 36px 36px;text-align:center;box-shadow:0 0 0 1px rgba(80,63,55,0.15),0 24px 80px rgba(0,0,0,0.5);}
+.confirm-icon{font-size:48px;margin-bottom:18px;}
+.confirm-title{font-size:22px;font-weight:800;color:#1e1e1e;margin-bottom:8px;letter-spacing:-.01em;}
+.confirm-sub{font-size:14px;color:#503f37;font-weight:600;line-height:1.6;margin-bottom:24px;}
+.confirm-detail{background:rgba(80,63,55,0.08);border:1px solid rgba(80,63,55,0.15);border-radius:12px;padding:14px 18px;margin-bottom:24px;text-align:left;}
+.confirm-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;}
+.confirm-row .cl{color:#837261;font-weight:600;}
+.confirm-row .cv{color:#1e1e1e;font-weight:800;}
+.confirm-close{width:100%;padding:15px;background:#503f37;color:#DACBBC;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;letter-spacing:.04em;font-family:'Inter',sans-serif;}
+.confirm-close:hover{background:#1e1e1e;}
 
 /* ── Admin extras ── */
 .adm-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
@@ -481,12 +494,19 @@ footer strong{color:var(--t2);font-weight:800;}
   </div>
 
   <div class="btn-row">
-    <button class="send-btn" onclick="odeslat()">Odeslat objednávku e-mailem →</button>
+    <button class="send-btn" onclick="potvrditObjednavku()">Potvrdit objednávku →</button>
     <button class="pdf-btn" onclick="generatePDF()">Stáhnout PDF</button>
   </div>
 
-  <div id="pdf-notice" style="display:none;opacity:0;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#503f37;color:#DACBBC;padding:14px 22px;border-radius:12px;font-size:13px;font-weight:700;box-shadow:0 8px 32px rgba(0,0,0,0.4);z-index:9999;gap:10px;align-items:center;transition:opacity .4s;max-width:90vw;text-align:center;">
-    📎 PDF objednávky bylo staženo do počítače — před odesláním e-mailu ho prosím přiložte jako přílohu.
+
+  <div id="confirm-modal">
+    <div class="confirm-card">
+      <div class="confirm-icon">✓</div>
+      <div class="confirm-title">Objednávka přijata!</div>
+      <div class="confirm-sub">Vaši objednávku jsme přijali.<br>Brzy se vám ozveme s potvrzením.</div>
+      <div class="confirm-detail" id="confirm-detail"></div>
+      <button class="confirm-close" onclick="closeConfirm()">Zavřít</button>
+    </div>
   </div>
 
   <footer>
@@ -610,6 +630,60 @@ function recalc(){
   });
   sb.innerHTML = '<div class="sum-items">'+irows+'</div>'
     +'<div class="sum-sub"><span>DPH 12 %</span><span>'+fmt(dph)+'</span></div>';
+}
+
+function potvrditObjednavku(){
+  var jm=document.getElementById('jmeno').value.trim();
+  var em=document.getElementById('email').value.trim();
+  if(!jm||!em){ alert('Vyplňte prosím jméno a e-mail.'); return; }
+  var items=[];
+  P.forEach(function(p,i){
+    var el=document.getElementById('q'+i); if(!el) return;
+    var q=Math.max(0,parseInt(el.value)||0);
+    if(q>0) items.push(Object.assign({},p,{qty:q,total:p.voc*q}));
+  });
+  if(!items.length){ alert('Přidejte prosím alespoň jeden produkt.'); return; }
+  var tb=items.reduce(function(s,i){return s+i.total;},0);
+  var fi=document.getElementById('firma').value.trim();
+  var tel=document.getElementById('tel').value.trim();
+  var adr=document.getElementById('adr').value.trim();
+  var poz=document.getElementById('poz').value.trim();
+
+  var btn=document.querySelector('.send-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Odesílám…'; }
+
+  _db.from('orders').insert([{
+    customer_name: jm,
+    company: fi||null,
+    email: em,
+    phone: tel||null,
+    address: adr||null,
+    note: poz||null,
+    items: items.map(function(it){ return {name:it.name,baleni:it.baleni||'',qty:it.qty,voc:it.voc,total:it.total}; }),
+    total_without_vat: tb
+  }]).then(function(res){
+    if(btn){ btn.disabled=false; btn.textContent='Potvrdit objednávku →'; }
+    if(res.error){ alert('Nepodařilo se odeslat objednávku. Zkuste to prosím znovu.\n('+res.error.message+')'); return; }
+    // show success modal
+    var rows='<div class="confirm-row"><span class="cl">Zákazník</span><span class="cv">'+jm+'</span></div>';
+    if(fi) rows+='<div class="confirm-row"><span class="cl">Firma</span><span class="cv">'+fi+'</span></div>';
+    rows+='<div class="confirm-row"><span class="cl">Položek</span><span class="cv">'+items.length+' druhy</span></div>';
+    rows+='<div class="confirm-row"><span class="cl">Celkem bez DPH</span><span class="cv">'+tb.toLocaleString('cs-CZ',{minimumFractionDigits:2,maximumFractionDigits:2})+' Kč</span></div>';
+    document.getElementById('confirm-detail').innerHTML=rows;
+    document.getElementById('confirm-modal').className='show';
+  });
+}
+
+function closeConfirm(){
+  document.getElementById('confirm-modal').className='';
+  // reset form
+  ['jmeno','firma','email','tel','adr','poz'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  P.forEach(function(p,i){
+    var el=document.getElementById('q'+i); if(el) el.value=0;
+  });
+  recalc();
 }
 
 function odeslat(){
