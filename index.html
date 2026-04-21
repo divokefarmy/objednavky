@@ -239,6 +239,37 @@ footer strong{color:var(--t2);font-weight:800;}
 .orders-msg{font-size:13px;color:#837261;text-align:center;padding:20px 0;font-style:italic;font-weight:500;}
 .orders-reload{display:block;margin:14px auto 0;padding:8px 18px;background:rgba(80,63,55,0.10);border:1px solid rgba(80,63,55,0.18);color:#503f37;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
 .orders-reload:hover{background:#503f37;color:#DACBBC;}
+/* ── Delivery note modal ── */
+#dl-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:2000;overflow-y:auto;padding:40px 20px 60px;}
+.dl-box{max-width:720px;margin:0 auto;background:#DACBBC;border:1px solid rgba(80,63,55,0.15);border-radius:24px;padding:32px;box-shadow:var(--shadow-gold);}
+.dl-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+.dl-title{font-size:20px;font-weight:800;color:#1e1e1e;}
+.dl-sub{font-size:13px;color:#837261;margin-top:4px;font-weight:600;line-height:1.7;}
+.dl-close{background:rgba(255,255,255,0.45);border:1px solid rgba(80,63,55,0.20);color:#503f37;padding:8px 18px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;font-family:'Inter',sans-serif;flex-shrink:0;}
+.dl-close:hover{background:#503f37;color:#DACBBC;}
+.dl-items-tbl{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:13px;}
+.dl-items-tbl th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#837261;padding:7px 8px;background:rgba(80,63,55,0.10);font-weight:800;text-align:left;}
+.dl-items-tbl td{padding:5px 6px;border-bottom:1px solid rgba(80,63,55,0.08);vertical-align:middle;}
+.dl-inp{width:100%;padding:5px 8px;background:#fff;border:1px solid rgba(80,63,55,0.18);border-radius:6px;font-size:12px;font-weight:600;outline:none;font-family:'Inter',sans-serif;color:#1e1e1e;}
+.dl-qty{width:56px;padding:5px 6px;background:#fff;border:1px solid rgba(80,63,55,0.18);border-radius:6px;font-size:13px;font-weight:700;text-align:center;outline:none;font-family:'Inter',sans-serif;color:#1e1e1e;}
+.dl-price{width:68px;padding:5px 8px;background:#fff;border:1px solid rgba(80,63,55,0.18);border-radius:6px;font-size:12px;font-weight:700;text-align:right;outline:none;font-family:'Inter',sans-serif;color:#1e1e1e;}
+.dl-del{padding:4px 9px;background:rgba(192,102,90,0.10);border:1px solid rgba(192,102,90,0.20);color:#a04438;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;transition:all .15s;font-family:'Inter',sans-serif;}
+.dl-del:hover{background:#a04438;color:#fff;}
+.dl-add-row{display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;}
+.dl-add-row input{flex:1;min-width:120px;padding:9px 12px;background:#fff;border:1px solid rgba(80,63,55,0.20);border-radius:8px;font-size:13px;font-weight:600;outline:none;font-family:'Inter',sans-serif;color:#1e1e1e;}
+.dl-add-btn{padding:9px 16px;background:rgba(80,63,55,0.12);border:1px solid rgba(80,63,55,0.20);color:#503f37;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;white-space:nowrap;}
+.dl-add-btn:hover{background:#503f37;color:#DACBBC;}
+.dl-totals{display:flex;justify-content:flex-end;gap:10px;align-items:baseline;padding:12px 0;border-top:1px solid rgba(80,63,55,0.15);margin-bottom:14px;}
+.dl-tlbl{font-size:13px;color:#837261;font-weight:600;}
+.dl-tval{font-size:22px;font-weight:800;color:#1e1e1e;}
+.dl-note-inp{width:100%;padding:10px 12px;background:rgba(255,255,255,0.55);border:1px solid rgba(80,63,55,0.20);border-radius:10px;font-size:13px;font-weight:600;color:#1e1e1e;outline:none;font-family:'Inter',sans-serif;resize:vertical;min-height:56px;margin-bottom:14px;}
+.dl-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.dl-send-btn{flex:2;padding:15px;background:#503f37;color:#DACBBC;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;letter-spacing:.04em;}
+.dl-send-btn:hover{background:#1e1e1e;}
+.dl-pdf-btn{flex:1;padding:15px;background:rgba(80,63,55,0.12);color:#503f37;border:1px solid rgba(80,63,55,0.20);border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;}
+.dl-pdf-btn:hover{background:rgba(80,63,55,0.22);}
+.dl-make-btn{padding:5px 12px;background:rgba(80,63,55,0.10);border:1px solid rgba(80,63,55,0.20);color:#503f37;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;transition:all .15s;font-family:'Inter',sans-serif;}
+.dl-make-btn:hover{background:#503f37;color:#DACBBC;}
 /* ── Light theme ── */
 body.light{--bg:#f5f0ea;--bg2:#ede7df;--bg3:#e4dbd0;--bg4:#dbd0c4;--border:rgba(80,63,55,0.18);--b2:rgba(80,63,55,0.30);--text:#1e1e1e;--t2:#503f37;--t3:#837261;--gold:#503f37;--gold2:#6b5548;--gold3:#3a2f2a;--gdim:rgba(80,63,55,0.08);--shadow:0 4px 24px rgba(0,0,0,0.09);--shadow-gold:0 0 0 1px rgba(80,63,55,0.15),0 8px 32px rgba(0,0,0,0.12);}
 body.light .summary,body.light .pnote{background:#fff;border-color:rgba(80,63,55,0.12);}
@@ -383,13 +414,14 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
     <div class="adm-hd">
       <div>
         <div class="adm-title">Správa</div>
-        <div class="adm-sub">Produkty · Příchozí objednávky</div>
+        <div class="adm-sub">Produkty · Objednávky · Dodací listy</div>
       </div>
       <button class="adm-close" onclick="closeAdmin()">✕ Zavřít</button>
     </div>
     <div class="adm-tabs">
       <button class="adm-tab active" id="tab-products" onclick="switchTab('products')">Produkty</button>
       <button class="adm-tab" id="tab-orders" onclick="switchTab('orders')">Objednávky</button>
+      <button class="adm-tab" id="tab-dl" onclick="switchTab('dl')">Dodací listy</button>
     </div>
     <div id="pane-products">
       <div class="adm-top">
@@ -417,6 +449,37 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
     <div id="pane-orders" style="display:none;">
       <div id="orders-list"><div class="orders-msg">Načítám objednávky…</div></div>
       <button class="orders-reload" onclick="loadOrders()">↻ Obnovit seznam</button>
+    </div>
+    <div id="pane-dl" style="display:none;">
+      <div id="dl-list"><div class="orders-msg">Načítám dodací listy…</div></div>
+      <button class="orders-reload" onclick="loadDodaciListy()">↻ Obnovit seznam</button>
+    </div>
+  </div>
+</div>
+
+<div id="dl-ov">
+  <div class="dl-box">
+    <div class="dl-hd">
+      <div>
+        <div class="dl-title">Dodací list</div>
+        <div class="dl-sub"><span id="dl-cust"></span><br><span id="dl-email" style="font-size:12px;font-weight:500;"></span></div>
+      </div>
+      <button class="dl-close" onclick="closeDodaciList()">✕ Zavřít</button>
+    </div>
+    <div id="dl-items-wrap"></div>
+    <div class="dl-add-row">
+      <input id="dl-new-name" placeholder="Název nové položky…">
+      <input id="dl-new-voc" type="number" placeholder="Cena/ks" style="max-width:110px;flex:none">
+      <button class="dl-add-btn" onclick="addDLItem()">+ Přidat položku</button>
+    </div>
+    <div class="dl-totals">
+      <span class="dl-tlbl">Celkem bez DPH:</span>
+      <span class="dl-tval" id="dl-total-val">0 Kč</span>
+    </div>
+    <textarea class="dl-note-inp" id="dl-note" placeholder="Poznámka k dodacímu listu…"></textarea>
+    <div class="dl-actions">
+      <button class="dl-send-btn" onclick="odeslatDL()">Stáhnout PDF + Odeslat emailem →</button>
+      <button class="dl-pdf-btn" onclick="stahnoutDL()">Jen PDF</button>
     </div>
   </div>
 </div>
@@ -868,11 +931,14 @@ function openAdmin(){
 function closeAdmin(){ document.getElementById('adm-ov').style.display='none'; }
 
 function switchTab(tab){
-  document.getElementById('tab-products').classList.toggle('active', tab==='products');
-  document.getElementById('tab-orders').classList.toggle('active', tab==='orders');
-  document.getElementById('pane-products').style.display = tab==='products' ? 'block' : 'none';
-  document.getElementById('pane-orders').style.display = tab==='orders' ? 'block' : 'none';
+  ['products','orders','dl'].forEach(function(t){
+    var btn=document.getElementById('tab-'+t);
+    var pane=document.getElementById('pane-'+t);
+    if(btn) btn.classList.toggle('active', t===tab);
+    if(pane) pane.style.display = t===tab ? 'block' : 'none';
+  });
   if(tab==='orders') loadOrders();
+  if(tab==='dl') loadDodaciListy();
 }
 
 // ── Orders ──
@@ -920,6 +986,7 @@ function renderOrders(){
           +'<button class="st-btn'+(st==='nova'?' act':'')+'" onclick="setOrderStatus(\''+o.id+'\','+idx+',\'nova\')">Nová</button>'
           +'<button class="st-btn'+(st==='vyrizuje_se'?' act':'')+'" onclick="setOrderStatus(\''+o.id+'\','+idx+',\'vyrizuje_se\')">Vyřizuje se</button>'
           +'<button class="st-btn'+(st==='vyrizena'?' act':'')+'" onclick="setOrderStatus(\''+o.id+'\','+idx+',\'vyrizena\')">Vyřízena</button>'
+          +'<button class="dl-make-btn" onclick="openDodaciList('+idx+')">📄 Dodací list</button>'
         +'</div>'
       +'</div>'
     +'</div>';
@@ -1171,6 +1238,167 @@ function generatePDF(){
 
   var fn='objednavka-divokefarmy-'+datum.replace(/\.\s*/g,'-').replace(/-$/,'')+'.pdf';
   doc.save(fn);
+}
+
+// ── Dodací listy ──
+var _dlItems=[], _dlOrder=null;
+
+function openDodaciList(idx){
+  _dlOrder=_orders[idx];
+  _dlItems=(_dlOrder.items||[]).map(function(it){return Object.assign({},it);});
+  document.getElementById('dl-cust').textContent=_dlOrder.customer_name+(_dlOrder.company?' / '+_dlOrder.company:'');
+  document.getElementById('dl-email').textContent=_dlOrder.email+(_dlOrder.phone?' · '+_dlOrder.phone:'');
+  document.getElementById('dl-note').value='';
+  renderDLItems();
+  document.getElementById('dl-ov').style.display='block';
+}
+function closeDodaciList(){ document.getElementById('dl-ov').style.display='none'; _dlItems=[]; _dlOrder=null; }
+
+function _he(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+function renderDLItems(){
+  var html='<table class="dl-items-tbl"><thead><tr><th>Produkt</th><th>Objem</th><th style="text-align:center">Ks</th><th style="text-align:right">Cena/ks</th><th style="text-align:right">Celkem</th><th></th></tr></thead><tbody>';
+  _dlItems.forEach(function(it,i){
+    var tot=((it.qty||0)*(it.voc||0));
+    html+='<tr>'
+      +'<td><input class="dl-inp" value="'+_he(it.name)+'" oninput="_dlItems['+i+'].name=this.value"></td>'
+      +'<td><input class="dl-inp" value="'+_he(it.baleni||'')+'" oninput="_dlItems['+i+'].baleni=this.value" style="width:72px"></td>'
+      +'<td style="text-align:center"><input class="dl-qty" type="number" min="0" value="'+(it.qty||0)+'" oninput="_dlItems['+i+'].qty=parseInt(this.value)||0;recalcDL()"></td>'
+      +'<td><input class="dl-price" type="number" min="0" value="'+(it.voc||0)+'" oninput="_dlItems['+i+'].voc=parseFloat(this.value)||0;recalcDL()"></td>'
+      +'<td style="text-align:right;font-weight:800;color:#503f37;white-space:nowrap" id="dlr'+i+'">'+tot.toFixed(2)+' Kč</td>'
+      +'<td><button class="dl-del" onclick="removeDLItem('+i+')">✕</button></td>'
+      +'</tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById('dl-items-wrap').innerHTML=html;
+  recalcDL();
+}
+
+function recalcDL(){
+  var total=0;
+  _dlItems.forEach(function(it,i){
+    var val=(it.qty||0)*(it.voc||0); total+=val;
+    var el=document.getElementById('dlr'+i); if(el) el.textContent=val.toFixed(2)+' Kč';
+  });
+  document.getElementById('dl-total-val').textContent=fmt(total);
+}
+
+function removeDLItem(i){ _dlItems.splice(i,1); renderDLItems(); }
+
+function addDLItem(){
+  var n=document.getElementById('dl-new-name').value.trim();
+  var v=parseFloat(document.getElementById('dl-new-voc').value)||0;
+  if(!n){ alert('Zadejte název položky.'); return; }
+  _dlItems.push({name:n,baleni:'',qty:1,voc:v,total:v});
+  document.getElementById('dl-new-name').value='';
+  document.getElementById('dl-new-voc').value='';
+  renderDLItems();
+}
+
+function _buildDLPDF(){
+  if(!_dlOrder||!_dlItems.length) return null;
+  var tb=_dlItems.reduce(function(s,it){return s+(it.qty||0)*(it.voc||0);},0);
+  var datum=new Date().toLocaleDateString('cs-CZ');
+  var dlNum='DL-'+new Date().toISOString().slice(0,10).replace(/-/g,'');
+  var note=document.getElementById('dl-note').value.trim();
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  doc.setFillColor(80,63,55); doc.rect(0,0,210,22,'F');
+  doc.setTextColor(220,203,188); doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text('DIVOKE FARMY  —  DODACI LIST',14,14);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(dlNum+'  |  '+datum,14,20);
+  doc.text('DF obchodni s.r.o.  |  adam@divokefarmy.cz  |  +420 777 186 246',196,20,{align:'right'});
+  doc.setTextColor(30,30,30);
+  var y=32; doc.setFontSize(9); doc.setFont('helvetica','bold');
+  doc.text('PRIJEMCE',14,y);
+  doc.setDrawColor(131,114,97); doc.setLineWidth(0.3); doc.line(14,y+2,90,y+2); y+=7;
+  doc.setFont('helvetica','normal');
+  var info=[_dlOrder.customer_name];
+  if(_dlOrder.company) info.push(_dlOrder.company);
+  info.push('E-mail: '+_dlOrder.email);
+  if(_dlOrder.phone) info.push('Tel: '+_dlOrder.phone);
+  if(_dlOrder.address) info.push(_dlOrder.address);
+  info.forEach(function(l){doc.text(l,14,y);y+=5;}); y+=4;
+  doc.autoTable({startY:y,
+    head:[['Produkt','Objem','Mnozstvi','Cena/ks','Celkem']],
+    body:_dlItems.map(function(it){return[it.name,it.baleni||'—',(it.qty||0)+' ks',(it.voc||0)+' Kc',((it.qty||0)*(it.voc||0)).toFixed(2)+' Kc'];}),
+    headStyles:{fillColor:[80,63,55],textColor:[220,203,188],fontStyle:'bold',fontSize:8},
+    bodyStyles:{fontSize:8,textColor:[30,30,30]},
+    alternateRowStyles:{fillColor:[240,235,228]},
+    columnStyles:{2:{halign:'center'},3:{halign:'right'},4:{halign:'right',fontStyle:'bold'}},
+    margin:{left:14,right:14},styles:{lineColor:[200,188,175],lineWidth:0.2}
+  });
+  var fy=doc.lastAutoTable.finalY+6;
+  doc.setFillColor(218,203,188); doc.rect(14,fy,182,22,'F');
+  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(131,114,97);
+  doc.text('Celkem bez DPH:',120,fy+7); doc.text('DPH 12 %:',120,fy+13);
+  doc.setFont('helvetica','bold'); doc.setTextColor(30,30,30);
+  doc.text(tb.toFixed(2)+' Kc',196,fy+7,{align:'right'});
+  doc.text((tb*VAT).toFixed(2)+' Kc',196,fy+13,{align:'right'});
+  doc.setFontSize(11); doc.text('CELKEM S DPH:',120,fy+21);
+  doc.text((tb*(1+VAT)).toFixed(2)+' Kc',196,fy+21,{align:'right'});
+  if(note){doc.setFontSize(8);doc.setFont('helvetica','italic');doc.setTextColor(131,114,97);doc.text('Poznamka: '+note,14,fy+32,{maxWidth:182});}
+  var sy=Math.min(fy+46,260);
+  doc.setDrawColor(131,114,97);doc.setLineWidth(0.3);doc.line(14,sy,80,sy);doc.line(130,sy,196,sy);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(131,114,97);
+  doc.text('Podpis odesilatele',14,sy+5); doc.text('Podpis prijemce',130,sy+5);
+  doc.setFillColor(80,63,55);doc.rect(0,285,210,12,'F');
+  doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(220,203,188);
+  doc.text('DF obchodni s.r.o.  |  ICO: 29279313  |  Sebrov 195, 679 22 Lipuvka  |  divokefarmy.cz',105,292,{align:'center'});
+  return {doc:doc,dlNum:dlNum,datum:datum,tb:tb,note:note};
+}
+
+function stahnoutDL(){
+  var r=_buildDLPDF(); if(!r){alert('Žádné položky.');return;}
+  r.doc.save('dodaci-list-'+r.dlNum+'-'+(_dlOrder.customer_name||'').replace(/\s+/g,'-')+'.pdf');
+}
+
+function odeslatDL(){
+  var r=_buildDLPDF(); if(!r){alert('Žádné položky.');return;}
+  var fn='dodaci-list-'+r.dlNum+'-'+(_dlOrder.customer_name||'').replace(/\s+/g,'-')+'.pdf';
+  r.doc.save(fn);
+  _db.from('delivery_notes').insert([{
+    order_id:_dlOrder.id, customer_name:_dlOrder.customer_name,
+    customer_email:_dlOrder.email, company:_dlOrder.company||null,
+    phone:_dlOrder.phone||null,
+    items:_dlItems.map(function(it){return{name:it.name,baleni:it.baleni||'',qty:it.qty||0,voc:it.voc||0,total:(it.qty||0)*(it.voc||0)};}),
+    total_without_vat:r.tb, note:r.note||null
+  }]).then(function(res){if(res.error)console.warn('DL save:',res.error.message);});
+  var subj='Dodaci list '+r.dlNum+' – '+(_dlOrder.customer_name||'');
+  var body='Dobry den,\n\nprikladame dodaci list '+r.dlNum+' ze dne '+r.datum+'.\n\nCelkem bez DPH: '+r.tb.toFixed(2)+' Kc\nCelkem s DPH: '+(r.tb*(1+VAT)).toFixed(2)+' Kc\n\nPDF naleznete v priloze.\n\nS pozdravem\nDivoke Farmy';
+  setTimeout(function(){
+    window.location.href='mailto:'+encodeURIComponent(_dlOrder.email)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
+  },500);
+}
+
+var _dodaciListy=[];
+function loadDodaciListy(){
+  document.getElementById('dl-list').innerHTML='<div class="orders-msg">Načítám dodací listy…</div>';
+  _db.from('delivery_notes').select('*').order('created_at',{ascending:false}).then(function(res){
+    if(res.error){document.getElementById('dl-list').innerHTML='<div class="orders-msg">Chyba: '+res.error.message+'</div>';return;}
+    _dodaciListy=res.data||[]; renderDodaciListy();
+  });
+}
+function renderDodaciListy(){
+  var list=document.getElementById('dl-list');
+  if(!_dodaciListy.length){list.innerHTML='<div class="orders-msg">Zatím žádné dodací listy.</div>';return;}
+  var html='<div class="orders-list">';
+  _dodaciListy.forEach(function(dl){
+    var d=new Date(dl.created_at).toLocaleDateString('cs-CZ');
+    var items=dl.items||[];
+    var irows=items.map(function(it){return'<tr><td>'+(it.name||'')+(it.baleni?' ('+it.baleni+')':'')+'</td><td style="text-align:center">'+(it.qty||0)+' ks</td><td style="text-align:right;font-weight:800">'+(it.total||0).toFixed(2)+' Kč</td></tr>';}).join('');
+    html+='<div class="order-card"><div class="order-hd" onclick="this.nextElementSibling.classList.toggle(\'show\')">'
+      +'<span class="order-date">'+d+'</span>'
+      +'<span class="order-name">'+(dl.customer_name||'')+'</span>'
+      +'<span class="order-total">'+(dl.total_without_vat||0).toFixed(2)+' Kč</span>'
+      +'<span class="order-status st-vyrizena">Odesláno</span>'
+      +'</div><div class="order-body">'
+      +'<div class="order-info">'+(dl.company||'')+(dl.customer_email?' · '+dl.customer_email:'')+'</div>'
+      +'<table class="order-items-tbl"><tr><th>Produkt</th><th style="text-align:center">Množství</th><th style="text-align:right">Celkem</th></tr>'+irows+'</table>'
+      +'</div></div>';
+  });
+  html+='</div>'; list.innerHTML=html;
 }
 
 function toggleTheme(){
