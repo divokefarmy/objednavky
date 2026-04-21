@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -238,6 +239,12 @@ footer strong{color:var(--t2);font-weight:800;}
 .orders-msg{font-size:13px;color:#837261;text-align:center;padding:20px 0;font-style:italic;font-weight:500;}
 .orders-reload{display:block;margin:14px auto 0;padding:8px 18px;background:rgba(80,63,55,0.10);border:1px solid rgba(80,63,55,0.18);color:#503f37;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
 .orders-reload:hover{background:#503f37;color:#DACBBC;}
+/* ── Remember me ── */
+.remember-bar{display:flex;align-items:center;gap:16px;margin:-8px 0 30px;padding:0 2px;}
+.remember-check{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--t3);font-weight:600;user-select:none;}
+.remember-check input[type=checkbox]{width:15px;height:15px;accent-color:#503f37;cursor:pointer;flex-shrink:0;}
+.forget-link{font-size:12px;color:var(--t3);cursor:pointer;text-decoration:underline;transition:color .15s;font-weight:600;}
+.forget-link:hover{color:var(--red);}
 @media(max-width:620px){
   .cgrid{grid-template-columns:1fr;}
   .cgrid .full{grid-column:1;}
@@ -476,6 +483,14 @@ footer strong{color:var(--t2);font-weight:800;}
     <div class="field full"><label>Doručovací adresa</label><input type="text" id="adr" placeholder="Ulice č.p., PSČ Město"></div>
   </div>
 
+  <div class="remember-bar">
+    <label class="remember-check">
+      <input type="checkbox" id="remember-me" onchange="toggleRemember()">
+      Zapamatovat moje údaje pro příště
+    </label>
+    <span class="forget-link" id="forget-link" style="display:none" onclick="forgetMe()">Zapomenout</span>
+  </div>
+
   <div class="slabel">Výběr produktů</div>
   <div id="pc"></div>
 
@@ -526,29 +541,32 @@ const VAT = 0.12;
 const _SUPA_URL = 'https://anblqlnhjddosmcieuuc.supabase.co';
 const _SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFuYmxxbG5oamRkb3NtY2lldXVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3ODM0ODMsImV4cCI6MjA5MjM1OTQ4M30.wBOfZDVrF5dmBbof3v5VFqxL2fRIvlmomUeXqMudnJY';
 const _db = window.supabase.createClient(_SUPA_URL, _SUPA_KEY);
+// ── EmailJS ── (vyplň po registraci na emailjs.com)
+const EJS_KEY      = 'TVUJ_PUBLIC_KEY';      // Account → API Keys
+const EJS_SERVICE  = 'TVUJ_SERVICE_ID';      // Email Services → Service ID
+const EJS_TEMPLATE = 'TVUJ_TEMPLATE_ID';     // Email Templates → Template ID
 const P = [{"cat": "Paštiky a pomazánky", "name": "Hrubá vepřová paštika", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 63, "ok": false}, {"cat": "Paštiky a pomazánky", "name": "Husí paštika", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 75, "ok": true}, {"cat": "Paštiky a pomazánky", "name": "Jemná vepřová paštika", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 63, "ok": true}, {"cat": "Paštiky a pomazánky", "name": "Kachní játrová paštika", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 75, "ok": true}, {"cat": "Paštiky a pomazánky", "name": "Polohrubá z divočáka", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 69, "ok": true}, {"cat": "Paštiky a pomazánky", "name": "Slaninový džem", "baleni": "120 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 63, "ok": false}, {"cat": "Paštiky a pomazánky", "name": "Pikantní topinková směs", "baleni": "170 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 51, "ok": false}, {"cat": "Vývary", "name": "Hovězí vývar", "baleni": "165 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 30, "ok": true}, {"cat": "Vývary", "name": "Vepřový vývar", "baleni": "165 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 30, "ok": true}, {"cat": "Vývary", "name": "Drůbeží vývar", "baleni": "165 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 30, "ok": true}, {"cat": "Klobásy a salámy", "name": "Klobása z divočáka – zelený pepř", "baleni": "120 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 50, "ok": false}, {"cat": "Klobásy a salámy", "name": "Klobása z Gruntu – 1 kus", "baleni": "100 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 31, "ok": true}, {"cat": "Klobásy a salámy", "name": "Klobása z Gruntu – pár", "baleni": "200 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 62, "ok": true}, {"cat": "Klobásy a salámy", "name": "Klobása Pikoška – 1 kus", "baleni": "100 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 31, "ok": true}, {"cat": "Klobásy a salámy", "name": "Klobása Pikoška – pár", "baleni": "200 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 62, "ok": true}, {"cat": "Klobásy a salámy", "name": "Podkova s goudou", "baleni": "130 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 55, "ok": true}, {"cat": "Klobásy a salámy", "name": "S jamajským rumem a brusinkami", "baleni": "120 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 50, "ok": true}, {"cat": "Klobásy a salámy", "name": "S vlašskými ořechy", "baleni": "120 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 50, "ok": true}, {"cat": "Klobásy a salámy", "name": "Španělka", "baleni": "130 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 55, "ok": true}, {"cat": "Klobásy a salámy", "name": "Jelení huhuchilli", "baleni": "115 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 68, "ok": false}, {"cat": "Klobásy a salámy", "name": "Hovězí japaleno cheddar", "baleni": "120 g", "sklad": "do 18°C", "trv": "4 měsíce", "voc": 68, "ok": false}, {"cat": "Párky a uzeniny", "name": "Špekáček 2 kusy", "baleni": "230–250 g", "sklad": "lednice", "trv": "21 dní", "voc": 38, "ok": false}, {"cat": "Párky a uzeniny", "name": "Špekáček 4 kusy", "baleni": "", "sklad": "lednice", "trv": "", "voc": 76, "ok": false}, {"cat": "Párky a uzeniny", "name": "Vepřový párek", "baleni": "370–400 g", "sklad": "lednice", "trv": "21 dní", "voc": 100, "ok": true}, {"cat": "Párky a uzeniny", "name": "Vranovská anglická slanina kus", "baleni": "250 g", "sklad": "lednice", "trv": "21 dní", "voc": 70, "ok": true}, {"cat": "Párky a uzeniny", "name": "Vranovská anglická slanina krájená", "baleni": "200 g", "sklad": "lednice", "trv": "14 dní", "voc": 56, "ok": true}, {"cat": "Ostatní", "name": "Medová šunka", "baleni": "100 g", "sklad": "lednice", "trv": "7 dní", "voc": 23, "ok": true}, {"cat": "Ostatní", "name": "Sádlo malé", "baleni": "600 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 63, "ok": true}, {"cat": "Ostatní", "name": "Sekaná česnek", "baleni": "500 g", "sklad": "lednice", "trv": "14 dní", "voc": 91, "ok": true}, {"cat": "Ostatní", "name": "Škvarková pomazánka", "baleni": "200 g", "sklad": "lednice", "trv": "4 měsíce", "voc": 34, "ok": true}, {"cat": "Ostatní", "name": "Škvarky v sádle menší", "baleni": "365 ml", "sklad": "lednice", "trv": "4 měsíce", "voc": 67, "ok": true}, {"cat": "Ostatní", "name": "Kachní chipsy", "baleni": "40 g", "sklad": "do 25°C", "trv": "4 měsíce", "voc": 57, "ok": true}, {"cat": "Ostatní", "name": "Jerky vepřové", "baleni": "30 g", "sklad": "do 25°C", "trv": "4 měsíce", "voc": 52, "ok": false}, {"cat": "Špeky", "name": "Špek farmářský", "baleni": "200 g", "sklad": "lednice", "trv": "3 měsíce", "voc": 40, "ok": true}, {"cat": "Špeky", "name": "Paprikový špek", "baleni": "200 g", "sklad": "lednice", "trv": "3 měsíce", "voc": 40, "ok": true}, {"cat": "Špeky", "name": "Zauzený špek", "baleni": "200 g", "sklad": "lednice", "trv": "3 měsíce", "voc": 43, "ok": true}];
 // ── state ──
 let avail = {};
 P.forEach(function(p,i){ avail[i] = p.ok; });
-try { var s = localStorage.getItem('df_av'); if(s) Object.assign(avail, JSON.parse(s)); } catch(e){}
-
 let prodOverrides = {};
-try { var po = localStorage.getItem('df_po'); if(po){ prodOverrides=JSON.parse(po); Object.keys(prodOverrides).forEach(function(i){ if(P[i]) Object.assign(P[i],prodOverrides[i]); }); } } catch(e){}
-
 let archived = {};
-try { var ar = localStorage.getItem('df_arch'); if(ar) archived=JSON.parse(ar); } catch(e){}
-
 let deleted = {};
-try { var dl = localStorage.getItem('df_del'); if(dl) deleted=JSON.parse(dl); } catch(e){}
-
 let customProds = [];
-try {
-  var cp = localStorage.getItem('df_cp');
-  if(cp){
-    customProds = JSON.parse(cp);
+
+function _applyState(d){
+  if(d.avail) Object.assign(avail, d.avail);
+  if(d.overrides && Object.keys(d.overrides).length){
+    prodOverrides = d.overrides;
+    Object.keys(prodOverrides).forEach(function(i){ if(P[i]) Object.assign(P[i], prodOverrides[i]); });
+  }
+  if(d.archived) archived = d.archived;
+  if(d.deleted) deleted = d.deleted;
+  if(d.custom_prods && d.custom_prods.length){
+    customProds = d.custom_prods;
     customProds.forEach(function(p){ P.push(Object.assign({_custom:true},p)); });
   }
-} catch(e){}
+}
 
 function fmt(n){ return n.toLocaleString('cs-CZ',{minimumFractionDigits:2,maximumFractionDigits:2})+' Kč'; }
 function changeQty(i,d){ var el=document.getElementById('q'+i); if(!el) return; el.value=Math.max(0,(parseInt(el.value)||0)+d); recalc(); }
@@ -664,10 +682,20 @@ function potvrditObjednavku(){
   }]).then(function(res){
     if(btn){ btn.disabled=false; btn.textContent='Potvrdit objednávku →'; }
     if(res.error){ alert('Nepodařilo se odeslat objednávku. Zkuste to prosím znovu.\n('+res.error.message+')'); return; }
-    // show success modal
+    // Zapamatovat zákazníka
+    saveCustomerDetails(jm,fi,em,tel,adr);
+    // Email notifikace
+    if(EJS_KEY !== 'TVUJ_PUBLIC_KEY'){
+      var itemsTxt=items.map(function(it){ return it.name+(it.baleni?' ('+it.baleni+')':'')+' — '+it.qty+' ks — '+it.total.toFixed(2)+' Kc'; }).join('\n');
+      emailjs.send(EJS_SERVICE, EJS_TEMPLATE, {
+        customer_name: jm, company: fi||'—', email: em, phone: tel||'—',
+        items_text: itemsTxt, total: tb.toFixed(2), note: poz||'—'
+      }, EJS_KEY).catch(function(e){ console.warn('EmailJS:', e); });
+    }
+    // Zobrazit potvrzení
     var rows='<div class="confirm-row"><span class="cl">Zákazník</span><span class="cv">'+jm+'</span></div>';
     if(fi) rows+='<div class="confirm-row"><span class="cl">Firma</span><span class="cv">'+fi+'</span></div>';
-    rows+='<div class="confirm-row"><span class="cl">Položek</span><span class="cv">'+items.length+' druhy</span></div>';
+    rows+='<div class="confirm-row"><span class="cl">Položek</span><span class="cv">'+items.length+' '+(items.length===1?'druh':items.length<5?'druhy':'druhů')+'</span></div>';
     rows+='<div class="confirm-row"><span class="cl">Celkem bez DPH</span><span class="cv">'+tb.toLocaleString('cs-CZ',{minimumFractionDigits:2,maximumFractionDigits:2})+' Kč</span></div>';
     document.getElementById('confirm-detail').innerHTML=rows;
     document.getElementById('confirm-modal').className='show';
@@ -676,14 +704,30 @@ function potvrditObjednavku(){
 
 function closeConfirm(){
   document.getElementById('confirm-modal').className='';
-  // reset form
-  ['jmeno','firma','email','tel','adr','poz'].forEach(function(id){
-    var el=document.getElementById(id); if(el) el.value='';
-  });
-  P.forEach(function(p,i){
-    var el=document.getElementById('q'+i); if(el) el.value=0;
-  });
+  document.getElementById('poz').value='';
+  P.forEach(function(p,i){ var el=document.getElementById('q'+i); if(el) el.value=0; });
+  // Refill saved customer details if remember-me is on
+  try{
+    var saved=localStorage.getItem('df_customer');
+    if(saved){ var c=JSON.parse(saved); ['jmeno','firma','email','tel','adr'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=c[id]||''; }); }
+    else { ['jmeno','firma','email','tel','adr'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; }); }
+  }catch(e){}
   recalc();
+}
+
+function toggleRemember(){
+  var on=document.getElementById('remember-me').checked;
+  document.getElementById('forget-link').style.display=on?'inline':'none';
+  if(!on) localStorage.removeItem('df_customer');
+}
+function saveCustomerDetails(jm,fi,em,tel,adr){
+  if(!document.getElementById('remember-me').checked) return;
+  try{ localStorage.setItem('df_customer',JSON.stringify({jmeno:jm,firma:fi,email:em,tel:tel,adr:adr})); }catch(e){}
+}
+function forgetMe(){
+  localStorage.removeItem('df_customer');
+  document.getElementById('remember-me').checked=false;
+  document.getElementById('forget-link').style.display='none';
 }
 
 function odeslat(){
@@ -862,16 +906,20 @@ function setOrderStatus(id,idx,status){
   });
 }
 function saveAdmin(){
+  var customs=P.filter(function(p){return p._custom;}).map(function(p){
+    return {cat:p.cat,name:p.name,baleni:p.baleni,sklad:p.sklad,trv:p.trv,voc:p.voc,ok:p.ok};
+  });
   try{
     localStorage.setItem('df_av',JSON.stringify(avail));
     localStorage.setItem('df_po',JSON.stringify(prodOverrides));
     localStorage.setItem('df_arch',JSON.stringify(archived));
     localStorage.setItem('df_del',JSON.stringify(deleted));
-    var customs=P.filter(function(p){return p._custom;}).map(function(p){
-      return {cat:p.cat,name:p.name,baleni:p.baleni,sklad:p.sklad,trv:p.trv,voc:p.voc,ok:p.ok};
-    });
     localStorage.setItem('df_cp',JSON.stringify(customs));
   }catch(e){}
+  _db.from('product_state').upsert([{
+    id:1, avail:avail, overrides:prodOverrides, archived:archived, deleted:deleted,
+    custom_prods:customs, updated_at:new Date().toISOString()
+  }]).then(function(res){ if(res.error) console.warn('Product sync error:',res.error.message); });
   closeAdmin(); buildAll();
 }
 
@@ -1085,7 +1133,33 @@ function generatePDF(){
 // DATE
 document.getElementById('dnes').textContent=new Date().toLocaleDateString('cs-CZ',{day:'numeric',month:'long',year:'numeric'});
 
-buildAll();
+// Remember-me autofill
+(function(){
+  try{
+    var saved=localStorage.getItem('df_customer');
+    if(saved){
+      var c=JSON.parse(saved);
+      ['jmeno','firma','email','tel','adr'].forEach(function(id){ var el=document.getElementById(id); if(el&&c[id]) el.value=c[id]; });
+      document.getElementById('remember-me').checked=true;
+      document.getElementById('forget-link').style.display='inline';
+    }
+  }catch(e){}
+})();
+
+// Load product state: Supabase first, localStorage fallback
+document.getElementById('pc').innerHTML='<div style="padding:32px 0;text-align:center;color:#837261;font-size:13px;font-weight:600;letter-spacing:.04em;">Načítám produkty…</div>';
+_db.from('product_state').select('*').eq('id',1).single().then(function(res){
+  if(!res.error && res.data){
+    _applyState(res.data);
+  } else {
+    try{ var s=localStorage.getItem('df_av'); if(s) Object.assign(avail,JSON.parse(s)); }catch(e){}
+    try{ var po=localStorage.getItem('df_po'); if(po){ prodOverrides=JSON.parse(po); Object.keys(prodOverrides).forEach(function(i){ if(P[i]) Object.assign(P[i],prodOverrides[i]); }); } }catch(e){}
+    try{ var ar=localStorage.getItem('df_arch'); if(ar) archived=JSON.parse(ar); }catch(e){}
+    try{ var dl=localStorage.getItem('df_del'); if(dl) deleted=JSON.parse(dl); }catch(e){}
+    try{ var cp=localStorage.getItem('df_cp'); if(cp){ customProds=JSON.parse(cp); customProds.forEach(function(p){ P.push(Object.assign({_custom:true},p)); }); } }catch(e){}
+  }
+  buildAll();
+});
 
 </script>
 </body>
