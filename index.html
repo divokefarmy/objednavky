@@ -49,6 +49,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .pw-btn:active{transform:translateY(0);}
 .pw-cancel{display:block;margin-top:14px;font-size:12px;color:#837261;cursor:pointer;font-weight:600;transition:color .15s;}
 .pw-cancel:hover{color:#503f37;}
+.touchid-btn{width:100%;margin-bottom:4px;padding:13px;background:#1e1e1e;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;letter-spacing:.04em;}
+.touchid-btn:hover{background:#333;transform:translateY(-1px);}
+.touchid-btn:disabled{opacity:.5;cursor:default;transform:none;}
+.pw-divider{display:flex;align-items:center;gap:10px;margin:12px 0 8px;color:#aaa;font-size:11px;font-weight:600;}
+.pw-divider::before,.pw-divider::after{content:'';flex:1;height:1px;background:rgba(80,63,55,0.2);}
+.pw-setup-note{font-size:11px;color:#837261;margin-top:10px;text-align:center;cursor:pointer;text-decoration:underline;font-weight:600;}
+.pw-setup-note:hover{color:#503f37;}
 
 /* ── ADMIN ── */
 #adm-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:1500;overflow-y:auto;padding:40px 20px 60px;}
@@ -410,7 +417,9 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
     </g>
 </svg></div>
     <div class="pw-title">Správa skladu</div>
-    <div class="pw-sub">Zadejte administrátorské heslo</div>
+    <div class="pw-sub" id="pw-sub">Zadejte administrátorské heslo</div>
+    <button class="touchid-btn" id="touchid-btn" onclick="tryTouchID()" style="display:none">🔒 Přihlásit přes Touch ID</button>
+    <div class="pw-divider" id="pw-divider" style="display:none"><span>nebo heslem</span></div>
     <input type="password" id="pw-inp" placeholder="••••••">
     <div class="pw-err" id="pw-err"></div>
     <button class="pw-btn" onclick="checkPw()">Přihlásit se</button>
@@ -980,18 +989,92 @@ function openPw(){
   document.getElementById('pw-inp').value='';
   document.getElementById('pw-err').textContent='';
   document.getElementById('pw-screen').className='show';
+  _initTouchIDBtn();
   setTimeout(function(){ document.getElementById('pw-inp').focus(); },80);
 }
 function closePw(){ document.getElementById('pw-screen').className=''; }
 function checkPw(){
   if(document.getElementById('pw-inp').value===ADMIN_PW){
     closePw(); openAdmin();
+    _offerTouchIDSetup();
   } else {
     document.getElementById('pw-err').textContent='Nesprávné heslo.';
     document.getElementById('pw-inp').value='';
   }
 }
 document.getElementById('pw-inp').addEventListener('keydown',function(e){ if(e.key==='Enter') checkPw(); });
+
+// ── Touch ID (WebAuthn) ──
+function _tidAvail(){
+  return !!(window.PublicKeyCredential && window.isSecureContext);
+}
+function _tidCredId(){
+  try{ return localStorage.getItem('df_tid_cred')||null; }catch(e){ return null; }
+}
+function _initTouchIDBtn(){
+  var btn=document.getElementById('touchid-btn');
+  var div=document.getElementById('pw-divider');
+  if(!btn) return;
+  if(_tidAvail() && _tidCredId()){
+    btn.style.display='block'; div.style.display='flex';
+    document.getElementById('pw-sub').textContent='Touch ID nebo heslo';
+  } else {
+    btn.style.display='none'; div.style.display='none';
+    document.getElementById('pw-sub').textContent='Zadejte administrátorské heslo';
+  }
+}
+async function tryTouchID(){
+  var credId=_tidCredId(); if(!credId) return;
+  var btn=document.getElementById('touchid-btn');
+  btn.disabled=true; btn.textContent='Ověřuji…';
+  try{
+    var challenge=new Uint8Array(32); crypto.getRandomValues(challenge);
+    var rawId=Uint8Array.from(atob(credId),function(c){return c.charCodeAt(0);});
+    var result=await navigator.credentials.get({publicKey:{
+      challenge:challenge,
+      allowCredentials:[{type:'public-key',id:rawId,transports:['internal']}],
+      userVerification:'required',timeout:30000
+    }});
+    if(result){ closePw(); openAdmin(); }
+  }catch(e){
+    btn.disabled=false; btn.textContent='🔒 Přihlásit přes Touch ID';
+    if(e.name!=='NotAllowedError'){
+      document.getElementById('pw-err').textContent='Touch ID se nezdařilo, použijte heslo.';
+    }
+  }
+}
+async function _offerTouchIDSetup(){
+  if(!_tidAvail()||_tidCredId()) return;
+  var ok=await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(function(){return false;});
+  if(!ok) return;
+  setTimeout(function(){
+    var want=confirm('Chcete nastavit přihlášení přes Touch ID pro příště?');
+    if(!want) return;
+    _setupTouchID();
+  },400);
+}
+async function _setupTouchID(){
+  try{
+    var challenge=new Uint8Array(32); crypto.getRandomValues(challenge);
+    var cred=await navigator.credentials.create({publicKey:{
+      challenge:challenge,
+      rp:{name:'Divoké Farmy Admin',id:location.hostname},
+      user:{id:new TextEncoder().encode('df-admin'),name:'admin',displayName:'Správce'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
+      timeout:30000
+    }});
+    var b64=btoa(String.fromCharCode.apply(null,new Uint8Array(cred.rawId)));
+    localStorage.setItem('df_tid_cred',b64);
+    alert('Touch ID nastaveno. Příště se přihlásíte otiskem prstu.');
+  }catch(e){
+    alert('Touch ID se nepodařilo nastavit: '+e.message);
+  }
+}
+function odstranitTouchID(){
+  localStorage.removeItem('df_tid_cred');
+  alert('Touch ID odstraněno. Přihlášení bude vyžadovat heslo.');
+}
 
 // ── ADMIN ──
 function openAdmin(){
@@ -1561,22 +1644,48 @@ function loadDodaciListy(){
 function renderDodaciListy(){
   var list=document.getElementById('dl-list');
   if(!_dodaciListy.length){list.innerHTML='<div class="orders-msg">Zatím žádné dodací listy.</div>';return;}
+  var archivedIds;
+  try{ archivedIds=JSON.parse(localStorage.getItem('df_dl_arch')||'[]'); }catch(e){ archivedIds=[]; }
   var html='<div class="orders-list">';
-  _dodaciListy.forEach(function(dl){
+  _dodaciListy.forEach(function(dl,idx){
     var d=new Date(dl.created_at).toLocaleDateString('cs-CZ');
     var items=dl.items||[];
+    var isArch=archivedIds.indexOf(dl.id)>=0;
     var irows=items.map(function(it){return'<tr><td>'+(it.name||'')+(it.baleni?' ('+it.baleni+')':'')+'</td><td style="text-align:center">'+(it.qty||0)+' ks</td><td style="text-align:right;font-weight:800">'+(it.total||0).toFixed(2)+' Kč</td></tr>';}).join('');
-    html+='<div class="order-card"><div class="order-hd" onclick="this.nextElementSibling.classList.toggle(\'show\')">'
+    html+='<div class="order-card'+(isArch?' storno-card':'')+'" id="dlc'+idx+'">'
+      +'<div class="order-hd" onclick="this.nextElementSibling.classList.toggle(\'show\')">'
       +'<span class="order-date">'+d+'</span>'
       +'<span class="order-name">'+(dl.customer_name||'')+'</span>'
       +'<span class="order-total">'+(dl.total_without_vat||0).toFixed(2)+' Kč</span>'
-      +'<span class="order-status st-vyrizena">Odesláno</span>'
-      +'</div><div class="order-body">'
+      +'<span class="order-status '+(isArch?'st-archivovana':'st-vyrizena')+'">'+(isArch?'Archivováno':'Odesláno')+'</span>'
+      +'</div>'
+      +'<div class="order-body">'
       +'<div class="order-info">'+(dl.company||'')+(dl.customer_email?' · '+dl.customer_email:'')+'</div>'
       +'<table class="order-items-tbl"><tr><th>Produkt</th><th style="text-align:center">Množství</th><th style="text-align:right">Celkem</th></tr>'+irows+'</table>'
+      +'<div class="order-actions">'
+      +'<button class="muted-btn" onclick="archivujDL(\''+dl.id+'\','+idx+')">'+(isArch?'↩ Obnovit':'📦 Archivovat')+'</button>'
+      +'<button class="danger-btn" style="border-color:rgba(100,0,0,0.3);background:rgba(100,0,0,0.07);color:#800" onclick="smazatDL(\''+dl.id+'\','+idx+')">🗑 Smazat</button>'
+      +'</div>'
       +'</div></div>';
   });
   html+='</div>'; list.innerHTML=html;
+}
+function archivujDL(id,idx){
+  try{
+    var arch=JSON.parse(localStorage.getItem('df_dl_arch')||'[]');
+    var pos=arch.indexOf(id);
+    if(pos>=0) arch.splice(pos,1); else arch.push(id);
+    localStorage.setItem('df_dl_arch',JSON.stringify(arch));
+  }catch(e){}
+  renderDodaciListy();
+}
+function smazatDL(id,idx){
+  if(!confirm('Opravdu trvale smazat tento dodací list? Tato akce je nevratná.')) return;
+  _db.from('delivery_notes').delete().eq('id',id).then(function(res){
+    if(res.error){ alert('Chyba: '+res.error.message); return; }
+    _dodaciListy.splice(idx,1);
+    renderDodaciListy();
+  });
 }
 
 function toggleTheme(){
