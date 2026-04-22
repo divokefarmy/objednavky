@@ -270,6 +270,8 @@ footer strong{color:var(--t2);font-weight:800;}
 .dl-pdf-btn:hover{background:rgba(80,63,55,0.22);}
 .dl-make-btn{padding:5px 12px;background:rgba(80,63,55,0.10);border:1px solid rgba(80,63,55,0.20);color:#503f37;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;transition:all .15s;font-family:'Inter',sans-serif;}
 .dl-make-btn:hover{background:#503f37;color:#DACBBC;}
+.order-pdf-btn{padding:5px 12px;background:rgba(20,20,20,0.07);border:1px solid rgba(20,20,20,0.18);color:#222;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;transition:all .15s;font-family:'Inter',sans-serif;}
+.order-pdf-btn:hover{background:#222;color:#fff;}
 /* ── Light theme ── */
 body.light{--bg:#f5f0ea;--bg2:#ede7df;--bg3:#e4dbd0;--bg4:#dbd0c4;--border:rgba(80,63,55,0.18);--b2:rgba(80,63,55,0.30);--text:#1e1e1e;--t2:#503f37;--t3:#837261;--gold:#503f37;--gold2:#6b5548;--gold3:#3a2f2a;--gdim:rgba(80,63,55,0.08);--shadow:0 4px 24px rgba(0,0,0,0.09);--shadow-gold:0 0 0 1px rgba(80,63,55,0.15),0 8px 32px rgba(0,0,0,0.12);}
 body.light .summary,body.light .pnote{background:#fff;border-color:rgba(80,63,55,0.12);}
@@ -1043,6 +1045,7 @@ function renderOrders(){
           +'<button class="st-btn'+(st==='nova'?' act':'')+'" onclick="setOrderStatus(\''+o.id+'\','+idx+',\'nova\')">Nová</button>'
           +'<button class="st-btn'+(st==='vyrizuje_se'?' act':'')+'" onclick="setOrderStatus(\''+o.id+'\','+idx+',\'vyrizuje_se\')">Vyřizuje se</button>'
           +'<button class="st-btn'+(st==='vyrizena'?' act':'')+'" onclick="setOrderStatus(\''+o.id+'\','+idx+',\'vyrizena\')">Vyřízena</button>'
+          +'<button class="order-pdf-btn" onclick="tiskniObjednavkuPDF('+idx+')">🖨 PDF</button>'
           +'<button class="dl-make-btn" onclick="openDodaciList('+idx+')">📄 Dodací list</button>'
         +'</div>'
       +'</div>'
@@ -1072,6 +1075,114 @@ function setOrderStatus(id,idx,status){
     }
   });
 }
+function tiskniObjednavkuPDF(idx){
+  var o=_orders[idx]; if(!o) return;
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  var items=o.items||[];
+  var datum=new Date(o.created_at).toLocaleDateString('cs-CZ');
+  var ordNum='OBJ-'+o.id.toString().slice(-6).toUpperCase();
+  var pageW=210, lm=14, rm=196;
+
+  // ── Hlavička ──
+  doc.setFillColor(20,20,20);
+  doc.rect(0,0,pageW,18,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(15); doc.setFont('helvetica','bold');
+  doc.text('DIVOKÉ FARMY', lm, 12);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('divokefarmy.cz  |  adam@divokefarmy.cz  |  +420 777 186 246', rm, 12, {align:'right'});
+
+  // ── Nadpis objednávky ──
+  doc.setTextColor(20,20,20);
+  doc.setFontSize(18); doc.setFont('helvetica','bold');
+  doc.text('OBJEDNÁVKA', lm, 32);
+  doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80);
+  doc.text(ordNum+'   |   '+datum, lm, 39);
+  doc.setDrawColor(20,20,20); doc.setLineWidth(0.5); doc.line(lm,42,rm,42);
+
+  // ── Zákazník ──
+  var y=49;
+  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(80,80,80);
+  doc.text('ZÁKAZNÍK', lm, y); y+=5;
+  doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20);
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text(o.customer_name||'', lm, y); y+=5;
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  if(o.company){ doc.text(o.company, lm, y); y+=5; }
+  doc.text('Email: '+o.email, lm, y); y+=5;
+  if(o.phone){ doc.text('Tel: '+o.phone, lm, y); y+=5; }
+  if(o.address){ doc.text('Adresa: '+o.address, lm, y); y+=5; }
+  y+=4;
+  doc.setDrawColor(180,180,180); doc.setLineWidth(0.3); doc.line(lm,y,rm,y); y+=6;
+
+  // ── Tabulka položek ──
+  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(80,80,80);
+  doc.text('POLOŽKY OBJEDNÁVKY', lm, y); y+=3;
+  doc.autoTable({
+    startY: y,
+    head:[['#','Produkt','Balení','Množství','VOC bez DPH / ks','Celkem bez DPH']],
+    body: items.map(function(it,i){
+      return [
+        i+1,
+        it.name||'',
+        it.baleni||'—',
+        it.qty+' ks',
+        (it.voc||0).toFixed(2)+' Kč',
+        it.total.toFixed(2)+' Kč'
+      ];
+    }),
+    headStyles:{
+      fillColor:[20,20,20], textColor:[255,255,255],
+      fontStyle:'bold', fontSize:8, cellPadding:3
+    },
+    bodyStyles:{fontSize:9, textColor:[20,20,20], cellPadding:3},
+    alternateRowStyles:{fillColor:[240,240,240]},
+    columnStyles:{
+      0:{halign:'center',cellWidth:8},
+      2:{halign:'center',cellWidth:22},
+      3:{halign:'center',cellWidth:22},
+      4:{halign:'right',cellWidth:36},
+      5:{halign:'right',cellWidth:36,fontStyle:'bold'}
+    },
+    margin:{left:lm, right:14},
+    styles:{lineColor:[180,180,180],lineWidth:0.2}
+  });
+
+  // ── Součty ──
+  var fy = doc.lastAutoTable.finalY + 4;
+  var bez = o.total_without_vat||0;
+  var dph = bez * VAT;
+  var celk = bez * (1+VAT);
+  var bw=80;
+  doc.setDrawColor(20,20,20); doc.setLineWidth(0.3); doc.line(rm-bw, fy, rm, fy); fy+=5;
+  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(60,60,60);
+  doc.text('Celkem bez DPH:', rm-bw, fy);
+  doc.text(bez.toFixed(2)+' Kč', rm, fy, {align:'right'}); fy+=5;
+  doc.text('DPH 12 %:', rm-bw, fy);
+  doc.text(dph.toFixed(2)+' Kč', rm, fy, {align:'right'}); fy+=1;
+  doc.setLineWidth(0.5); doc.line(rm-bw, fy+1, rm, fy+1); fy+=5;
+  doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(20,20,20);
+  doc.text('CELKEM S DPH:', rm-bw, fy);
+  doc.text(celk.toFixed(2)+' Kč', rm, fy, {align:'right'}); fy+=8;
+
+  // ── Poznámka ──
+  if(o.note){
+    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(80,80,80);
+    doc.text('POZNÁMKA:', lm, fy); fy+=5;
+    doc.setFont('helvetica','italic'); doc.setTextColor(40,40,40);
+    var lines=doc.splitTextToSize(o.note, rm-lm);
+    doc.text(lines, lm, fy);
+  }
+
+  // ── Patička ──
+  doc.setFillColor(20,20,20); doc.rect(0,282,pageW,15,'F');
+  doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(200,200,200);
+  doc.text('DF obchodní s.r.o.  |  IČO: 29279313  |  Šebrov 195, 679 22 Lipůvka  |  divokefarmy.cz', 105, 291, {align:'center'});
+
+  doc.save('objednavka-'+ordNum+'-'+(o.customer_name||'').replace(/\s+/g,'-')+'.pdf');
+}
+
 function saveAdmin(){
   var customs=P.filter(function(p){return p._custom;}).map(function(p){
     return {cat:p.cat,name:p.name,baleni:p.baleni,sklad:p.sklad,trv:p.trv,voc:p.voc,ok:p.ok};
