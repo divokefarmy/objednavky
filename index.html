@@ -226,6 +226,13 @@ footer strong{color:var(--t2);font-weight:800;}
 .st-nova{background:rgba(122,158,142,0.25);color:#2e5c4e;}
 .st-vyrizuje{background:rgba(131,114,97,0.20);color:#503f37;}
 .st-vyrizena{background:rgba(80,63,55,0.12);color:#837261;}
+.st-storno{background:rgba(180,40,40,0.13);color:#b02020;}
+.st-archivovana{background:rgba(100,100,100,0.13);color:#666;}
+.order-card.storno-card{opacity:0.6;}
+.danger-btn{padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid rgba(180,40,40,0.25);background:rgba(180,40,40,0.07);color:#b02020;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
+.danger-btn:hover{background:#b02020;color:#fff;border-color:#b02020;}
+.muted-btn{padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid rgba(100,100,100,0.20);background:rgba(100,100,100,0.07);color:#666;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
+.muted-btn:hover{background:#555;color:#fff;border-color:#555;}
 .order-body{display:none;padding:12px 16px 14px;border-top:1px solid rgba(80,63,55,0.12);}
 .order-body.show{display:block;}
 .order-info{font-size:12px;color:#503f37;margin-bottom:10px;line-height:1.8;font-weight:600;}
@@ -745,6 +752,11 @@ function buildAll(){
     var prods = P.map(function(p,i){ return Object.assign({},p,{idx:i}); })
       .filter(function(p){ return p.cat===cat && !deleted[p.idx] && !archived[p.idx]; });
     if(!prods.length) return;
+    prods.sort(function(a,b){
+      var aOk=avail[a.idx]?0:1, bOk=avail[b.idx]?0:1;
+      if(aOk!==bOk) return aOk-bOk;
+      return a.name.localeCompare(b.name,'cs');
+    });
     var nok = prods.filter(function(p){ return avail[p.idx]; }).length;
     var cards = '';
     prods.forEach(function(p){
@@ -1014,8 +1026,8 @@ function loadOrders(){
 function renderOrders(){
   var list = document.getElementById('orders-list');
   if(!_orders.length){ list.innerHTML='<div class="orders-msg">Zatím žádné objednávky.</div>'; return; }
-  var stLabel={nova:'Nová',vyrizuje_se:'Vyřizuje se',vyrizena:'Vyřízena'};
-  var stCls={nova:'st-nova',vyrizuje_se:'st-vyrizuje',vyrizena:'st-vyrizena'};
+  var stLabel={nova:'Nová',vyrizuje_se:'Vyřizuje se',vyrizena:'Vyřízena',storno:'Storno',archivovana:'Archivováno'};
+  var stCls={nova:'st-nova',vyrizuje_se:'st-vyrizuje',vyrizena:'st-vyrizena',storno:'st-storno',archivovana:'st-archivovana'};
   var html='<div class="orders-list">';
   _orders.forEach(function(o,idx){
     var d=new Date(o.created_at).toLocaleDateString('cs-CZ');
@@ -1031,7 +1043,8 @@ function renderOrders(){
     if(o.phone) info+=' · '+o.phone;
     if(o.address) info+='<br>'+o.address;
     if(o.note) info+='<br><em>'+o.note+'</em>';
-    html+='<div class="order-card" id="oc'+idx+'">'
+    var isStorno = st==='storno';
+    html+='<div class="order-card'+(isStorno?' storno-card':'')+'" id="oc'+idx+'">'
       +'<div class="order-hd" onclick="toggleOrder('+idx+')">'
         +'<span class="order-date">'+d+'</span>'
         +'<span class="order-name">'+o.customer_name+'</span>'
@@ -1047,6 +1060,9 @@ function renderOrders(){
           +'<button class="st-btn'+(st==='vyrizena'?' act':'')+'" onclick="setOrderStatus(\''+o.id+'\','+idx+',\'vyrizena\')">Vyřízena</button>'
           +'<button class="order-pdf-btn" onclick="tiskniObjednavkuPDF('+idx+')">🖨 PDF</button>'
           +'<button class="dl-make-btn" onclick="openDodaciList('+idx+')">📄 Dodací list</button>'
+          +'<button class="danger-btn" onclick="stornujObjednavku(\''+o.id+'\','+idx+')">⊘ Storno</button>'
+          +'<button class="muted-btn" onclick="archivujObjednavku(\''+o.id+'\','+idx+')">📦 Archivovat</button>'
+          +'<button class="danger-btn" style="border-color:rgba(100,0,0,0.3);background:rgba(100,0,0,0.07);color:#800" onclick="smazatObjednavku(\''+o.id+'\','+idx+')">🗑 Smazat</button>'
         +'</div>'
       +'</div>'
     +'</div>';
@@ -1060,8 +1076,8 @@ function toggleOrder(idx){
 }
 
 function setOrderStatus(id,idx,status){
-  var stLabel={nova:'Nová',vyrizuje_se:'Vyřizuje se',vyrizena:'Vyřízena'};
-  var stCls={nova:'st-nova',vyrizuje_se:'st-vyrizuje',vyrizena:'st-vyrizena'};
+  var stLabel={nova:'Nová',vyrizuje_se:'Vyřizuje se',vyrizena:'Vyřízena',storno:'Storno',archivovana:'Archivováno'};
+  var stCls={nova:'st-nova',vyrizuje_se:'st-vyrizuje',vyrizena:'st-vyrizena',storno:'st-storno',archivovana:'st-archivovana'};
   _db.from('orders').update({status:status}).eq('id',id).then(function(res){
     if(res.error){ alert('Chyba: '+res.error.message); return; }
     _orders[idx].status=status;
@@ -1075,112 +1091,106 @@ function setOrderStatus(id,idx,status){
     }
   });
 }
+function stornujObjednavku(id,idx){
+  if(!confirm('Opravdu stornovat tuto objednávku?')) return;
+  _db.from('orders').update({status:'storno'}).eq('id',id).then(function(res){
+    if(res.error){ alert('Chyba: '+res.error.message); return; }
+    _orders[idx].status='storno';
+    renderOrders();
+  });
+}
+function archivujObjednavku(id,idx){
+  _db.from('orders').update({status:'archivovana'}).eq('id',id).then(function(res){
+    if(res.error){ alert('Chyba: '+res.error.message); return; }
+    _orders[idx].status='archivovana';
+    renderOrders();
+  });
+}
+function smazatObjednavku(id,idx){
+  if(!confirm('Opravdu trvale smazat tuto objednávku? Tato akce je nevratná.')) return;
+  _db.from('orders').delete().eq('id',id).then(function(res){
+    if(res.error){ alert('Chyba: '+res.error.message); return; }
+    _orders.splice(idx,1);
+    renderOrders();
+  });
+}
 function tiskniObjednavkuPDF(idx){
   var o=_orders[idx]; if(!o) return;
-  var jsPDF=window.jspdf.jsPDF;
-  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   var items=o.items||[];
   var datum=new Date(o.created_at).toLocaleDateString('cs-CZ');
   var ordNum='OBJ-'+o.id.toString().slice(-6).toUpperCase();
-  var pageW=210, lm=14, rm=196;
-
-  // ── Hlavička ──
-  doc.setFillColor(20,20,20);
-  doc.rect(0,0,pageW,18,'F');
-  doc.setTextColor(255,255,255);
-  doc.setFontSize(15); doc.setFont('helvetica','bold');
-  doc.text('DIVOKÉ FARMY', lm, 12);
-  doc.setFontSize(9); doc.setFont('helvetica','normal');
-  doc.text('divokefarmy.cz  |  adam@divokefarmy.cz  |  +420 777 186 246', rm, 12, {align:'right'});
-
-  // ── Nadpis objednávky ──
-  doc.setTextColor(20,20,20);
-  doc.setFontSize(18); doc.setFont('helvetica','bold');
-  doc.text('OBJEDNÁVKA', lm, 32);
-  doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80);
-  doc.text(ordNum+'   |   '+datum, lm, 39);
-  doc.setDrawColor(20,20,20); doc.setLineWidth(0.5); doc.line(lm,42,rm,42);
-
-  // ── Zákazník ──
-  var y=49;
-  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(80,80,80);
-  doc.text('ZÁKAZNÍK', lm, y); y+=5;
-  doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20);
-  doc.setFontSize(11); doc.setFont('helvetica','bold');
-  doc.text(o.customer_name||'', lm, y); y+=5;
-  doc.setFontSize(9); doc.setFont('helvetica','normal');
-  if(o.company){ doc.text(o.company, lm, y); y+=5; }
-  doc.text('Email: '+o.email, lm, y); y+=5;
-  if(o.phone){ doc.text('Tel: '+o.phone, lm, y); y+=5; }
-  if(o.address){ doc.text('Adresa: '+o.address, lm, y); y+=5; }
-  y+=4;
-  doc.setDrawColor(180,180,180); doc.setLineWidth(0.3); doc.line(lm,y,rm,y); y+=6;
-
-  // ── Tabulka položek ──
-  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(80,80,80);
-  doc.text('POLOŽKY OBJEDNÁVKY', lm, y); y+=3;
-  doc.autoTable({
-    startY: y,
-    head:[['#','Produkt','Balení','Množství','VOC bez DPH / ks','Celkem bez DPH']],
-    body: items.map(function(it,i){
-      return [
-        i+1,
-        it.name||'',
-        it.baleni||'—',
-        it.qty+' ks',
-        (it.voc||0).toFixed(2)+' Kč',
-        it.total.toFixed(2)+' Kč'
-      ];
-    }),
-    headStyles:{
-      fillColor:[20,20,20], textColor:[255,255,255],
-      fontStyle:'bold', fontSize:8, cellPadding:3
-    },
-    bodyStyles:{fontSize:9, textColor:[20,20,20], cellPadding:3},
-    alternateRowStyles:{fillColor:[240,240,240]},
-    columnStyles:{
-      0:{halign:'center',cellWidth:8},
-      2:{halign:'center',cellWidth:22},
-      3:{halign:'center',cellWidth:22},
-      4:{halign:'right',cellWidth:36},
-      5:{halign:'right',cellWidth:36,fontStyle:'bold'}
-    },
-    margin:{left:lm, right:14},
-    styles:{lineColor:[180,180,180],lineWidth:0.2}
-  });
-
-  // ── Součty ──
-  var fy = doc.lastAutoTable.finalY + 4;
-  var bez = o.total_without_vat||0;
-  var dph = bez * VAT;
-  var celk = bez * (1+VAT);
-  var bw=80;
-  doc.setDrawColor(20,20,20); doc.setLineWidth(0.3); doc.line(rm-bw, fy, rm, fy); fy+=5;
-  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(60,60,60);
-  doc.text('Celkem bez DPH:', rm-bw, fy);
-  doc.text(bez.toFixed(2)+' Kč', rm, fy, {align:'right'}); fy+=5;
-  doc.text('DPH 12 %:', rm-bw, fy);
-  doc.text(dph.toFixed(2)+' Kč', rm, fy, {align:'right'}); fy+=1;
-  doc.setLineWidth(0.5); doc.line(rm-bw, fy+1, rm, fy+1); fy+=5;
-  doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(20,20,20);
-  doc.text('CELKEM S DPH:', rm-bw, fy);
-  doc.text(celk.toFixed(2)+' Kč', rm, fy, {align:'right'}); fy+=8;
-
-  // ── Poznámka ──
-  if(o.note){
-    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(80,80,80);
-    doc.text('POZNÁMKA:', lm, fy); fy+=5;
-    doc.setFont('helvetica','italic'); doc.setTextColor(40,40,40);
-    var lines=doc.splitTextToSize(o.note, rm-lm);
-    doc.text(lines, lm, fy);
-  }
-
-  // ── Patička ──
-  doc.setFillColor(20,20,20); doc.rect(0,282,pageW,15,'F');
-  doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(200,200,200);
-  doc.text('DF obchodní s.r.o.  |  IČO: 29279313  |  Šebrov 195, 679 22 Lipůvka  |  divokefarmy.cz', 105, 291, {align:'center'});
-
-  doc.save('objednavka-'+ordNum+'-'+(o.customer_name||'').replace(/\s+/g,'-')+'.pdf');
+  var bez=o.total_without_vat||0, dph=bez*VAT, celk=bez*(1+VAT);
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var rows=items.map(function(it,i){
+    return '<tr>'
+      +'<td class="c">'+( i+1)+'</td>'
+      +'<td>'+esc(it.name)+'</td>'
+      +'<td class="c">'+esc(it.baleni||'—')+'</td>'
+      +'<td class="c">'+it.qty+' ks</td>'
+      +'<td class="r">'+(it.voc||0).toFixed(2)+' Kč</td>'
+      +'<td class="r b">'+it.total.toFixed(2)+' Kč</td>'
+      +'</tr>';
+  }).join('');
+  var info='<strong>'+esc(o.customer_name)+'</strong>';
+  if(o.company) info+='<br>'+esc(o.company);
+  info+='<br>Email: '+esc(o.email);
+  if(o.phone) info+='<br>Tel: '+esc(o.phone);
+  if(o.address) info+='<br>Adresa: '+esc(o.address);
+  var html='<!DOCTYPE html><html lang="cs"><head><meta charset="UTF-8"><title>'+ordNum+'</title>'
+    +'<style>'
+    +'*{margin:0;padding:0;box-sizing:border-box;}'
+    +'body{font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#111;}'
+    +'@page{margin:14mm 14mm 20mm 14mm;}'
+    +'.hd{display:flex;justify-content:space-between;align-items:center;background:#111;color:#fff;padding:9px 14px;margin-bottom:18px;}'
+    +'.hd-co{font-size:15pt;font-weight:bold;letter-spacing:.5px;}'
+    +'.hd-ct{font-size:7.5pt;text-align:right;line-height:1.5;}'
+    +'.title{font-size:20pt;font-weight:bold;margin-bottom:3px;}'
+    +'.sub{font-size:9pt;color:#555;margin-bottom:14px;}'
+    +'hr.thick{border:none;border-top:1.5px solid #111;margin:10px 0;}'
+    +'hr.thin{border:none;border-top:.5px solid #bbb;margin:10px 0;}'
+    +'.lbl{font-size:7pt;font-weight:bold;color:#777;letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px;}'
+    +'.cust{font-size:10pt;line-height:1.65;margin-bottom:14px;}'
+    +'table{width:100%;border-collapse:collapse;margin-top:4px;}'
+    +'th{background:#111;color:#fff;font-size:8.5pt;padding:6px 8px;text-align:left;font-weight:bold;}'
+    +'td{font-size:10pt;padding:6px 8px;border-bottom:.5px solid #ddd;}'
+    +'tr:nth-child(even) td{background:#f4f4f4;}'
+    +'.c{text-align:center;} .r{text-align:right;} .b{font-weight:bold;}'
+    +'.tots{display:flex;justify-content:flex-end;margin-top:14px;}'
+    +'.tots table{width:250px;border-collapse:collapse;}'
+    +'.tots td{font-size:10pt;padding:3px 8px;border:none;}'
+    +'.tots .fin{font-size:12pt;font-weight:bold;border-top:1.5px solid #111;padding-top:5px;}'
+    +'.note{margin-top:14px;padding:9px 11px;border:1px solid #ccc;font-size:9pt;font-style:italic;color:#444;}'
+    +'.ft{position:fixed;bottom:0;left:0;right:0;background:#111;color:#ccc;text-align:center;font-size:7pt;padding:5px;}'
+    +'</style></head><body>'
+    +'<div class="hd"><div class="hd-co">DIVOKÉ FARMY</div>'
+    +'<div class="hd-ct">divokefarmy.cz &nbsp;|&nbsp; adam@divokefarmy.cz &nbsp;|&nbsp; +420 777 186 246</div></div>'
+    +'<div class="title">OBJEDNÁVKA</div>'
+    +'<div class="sub">'+ordNum+'&ensp;|&ensp;'+datum+'</div>'
+    +'<hr class="thick">'
+    +'<div class="lbl">Zákazník</div>'
+    +'<div class="cust">'+info+'</div>'
+    +'<hr class="thin">'
+    +'<div class="lbl">Položky objednávky</div>'
+    +'<table><thead><tr>'
+    +'<th style="width:24px">#</th><th>Produkt</th>'
+    +'<th style="width:68px;text-align:center">Balení</th>'
+    +'<th style="width:62px;text-align:center">Množství</th>'
+    +'<th style="width:94px;text-align:right">VOC bez DPH&nbsp;/&nbsp;ks</th>'
+    +'<th style="width:94px;text-align:right">Celkem bez DPH</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table>'
+    +'<div class="tots"><table>'
+    +'<tr><td>Celkem bez DPH:</td><td class="r">'+bez.toFixed(2)+' Kč</td></tr>'
+    +'<tr><td>DPH 12&nbsp;%:</td><td class="r">'+dph.toFixed(2)+' Kč</td></tr>'
+    +'<tr class="fin"><td><strong>CELKEM S DPH:</strong></td><td class="r b">'+celk.toFixed(2)+' Kč</td></tr>'
+    +'</table></div>'
+    +(o.note?'<div class="note"><strong>Poznámka:</strong> '+esc(o.note)+'</div>':'')
+    +'<div class="ft">DF obchodní s.r.o.&ensp;|&ensp;IČO: 29279313&ensp;|&ensp;Šebrov 195, 679 22 Lipůvka&ensp;|&ensp;divokefarmy.cz</div>'
+    +'</body></html>';
+  var win=window.open('','_blank','width=820,height=960');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(function(){ win.print(); },500);
 }
 
 function saveAdmin(){
