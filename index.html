@@ -1015,6 +1015,7 @@ function _initTouchIDBtn(){
   var btn=document.getElementById('touchid-btn');
   var div=document.getElementById('pw-divider');
   if(!btn) return;
+  btn.disabled=false; btn.textContent='🔒 Přihlásit přes Touch ID';
   if(_tidAvail() && _tidCredId()){
     btn.style.display='block'; div.style.display='flex';
     document.getElementById('pw-sub').textContent='Touch ID nebo heslo';
