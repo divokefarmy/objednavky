@@ -1365,11 +1365,11 @@ function tiskniObjednavkuPDF(idx){
     +(o.note?'<div class="note"><strong>Poznámka:</strong> '+esc(o.note)+'</div>':'')
     +'<div class="ft">DF obchodní s.r.o.&ensp;|&ensp;IČO: 29279313&ensp;|&ensp;Šebrov 195, 679 22 Lipůvka&ensp;|&ensp;divokefarmy.cz</div>'
     +'</body></html>';
-  var win=window.open('','_blank','width=820,height=960');
-  win.document.write(html);
-  win.document.close();
+  var blob=new Blob([html],{type:'text/html'});
+  var blobUrl=URL.createObjectURL(blob);
+  var win=window.open(blobUrl,'_blank','width=820,height=960');
   win.focus();
-  setTimeout(function(){ win.print(); },500);
+  setTimeout(function(){ win.print(); URL.revokeObjectURL(blobUrl); },500);
 }
 
 function saveAdmin(){
@@ -1825,11 +1825,11 @@ function stahnoutDL(){
     +'<div class="sigs"><div class="sig">Podpis odesílatele</div><div class="sig">Podpis příjemce</div></div>'
     +'<div class="footer">DF obchodní s.r.o. &nbsp;|&nbsp; IČO: 29279313 &nbsp;|&nbsp; Šebrov 195, 679 22 Lipůvka &nbsp;|&nbsp; divokefarmy.cz</div>'
     +'</body></html>';
-  var win=window.open('','_blank','width=850,height=1100');
-  win.document.write(html);
-  win.document.close();
+  var blob=new Blob([html],{type:'text/html'});
+  var blobUrl=URL.createObjectURL(blob);
+  var win=window.open(blobUrl,'_blank','width=850,height=1100');
   win.focus();
-  setTimeout(function(){ win.print(); },400);
+  setTimeout(function(){ win.print(); URL.revokeObjectURL(blobUrl); },500);
 }
 
 function odeslatDL(){
