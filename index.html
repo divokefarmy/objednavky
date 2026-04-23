@@ -1655,7 +1655,23 @@ function addDLItem(){
   renderDLItems();
 }
 
-function _buildDLPDF(){
+var _dlFontB64 = null;
+async function _nacistFont(doc){
+  if(!_dlFontB64){
+    var resp = await fetch('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.ttf');
+    var buf = await resp.arrayBuffer();
+    var bytes = new Uint8Array(buf);
+    var binary = ''; var chunk = 8192;
+    for(var i=0;i<bytes.byteLength;i+=chunk) binary += String.fromCharCode.apply(null,bytes.subarray(i,i+chunk));
+    _dlFontB64 = btoa(binary);
+  }
+  doc.addFileToVFS('Roboto.ttf', _dlFontB64);
+  doc.addFont('Roboto.ttf','Roboto','normal');
+  doc.addFileToVFS('Roboto.ttf', _dlFontB64);
+  doc.addFont('Roboto.ttf','Roboto','bold');
+}
+
+async function _buildDLPDF(){
   if(!_dlOrder||!_dlItems.length) return null;
   var tb=_dlItems.reduce(function(s,it){return s+(it.vahy?(it.vahy_kg||0)*(it.voc_kg||0):(it.qty||0)*(it.voc||0));},0);
   var datum=new Date().toLocaleDateString('cs-CZ');
@@ -1663,17 +1679,19 @@ function _buildDLPDF(){
   var note=document.getElementById('dl-note').value.trim();
   var jsPDF=window.jspdf.jsPDF;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  await _nacistFont(doc);
+  var F='Roboto';
   doc.setFillColor(80,63,55); doc.rect(0,0,210,22,'F');
-  doc.setTextColor(220,203,188); doc.setFontSize(14); doc.setFont('helvetica','bold');
-  doc.text('DIVOKE FARMY  —  DODACI LIST',14,14);
-  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.setTextColor(220,203,188); doc.setFontSize(14); doc.setFont(F,'bold');
+  doc.text('DIVOKÉ FARMY  —  DODACÍ LIST',14,14);
+  doc.setFontSize(9); doc.setFont(F,'normal');
   doc.text(dlNum+'  |  '+datum,14,20);
-  doc.text('DF obchodni s.r.o.  |  adam@divokefarmy.cz  |  +420 777 186 246',196,20,{align:'right'});
+  doc.text('DF obchodní s.r.o.  |  adam@divokefarmy.cz  |  +420 777 186 246',196,20,{align:'right'});
   doc.setTextColor(30,30,30);
-  var y=32; doc.setFontSize(9); doc.setFont('helvetica','bold');
-  doc.text('PRIJEMCE',14,y);
+  var y=32; doc.setFontSize(9); doc.setFont(F,'bold');
+  doc.text('PŘÍJEMCE',14,y);
   doc.setDrawColor(131,114,97); doc.setLineWidth(0.3); doc.line(14,y+2,90,y+2); y+=7;
-  doc.setFont('helvetica','normal');
+  doc.setFont(F,'normal');
   var info=[_dlOrder.customer_name];
   if(_dlOrder.company) info.push(_dlOrder.company);
   info.push('E-mail: '+_dlOrder.email);
@@ -1681,51 +1699,61 @@ function _buildDLPDF(){
   if(_dlOrder.address) info.push(_dlOrder.address);
   info.forEach(function(l){doc.text(l,14,y);y+=5;}); y+=4;
   doc.autoTable({startY:y,
-    head:[['Produkt','Objem','Ks','Vaha (kg)','Cena/jedn.','Celkem']],
+    head:[['Produkt','Objem','Ks','Váha (kg)','Cena/jedn.','Celkem']],
     body:_dlItems.map(function(it){
       var tot=it.vahy?(it.vahy_kg||0)*(it.voc_kg||0):(it.qty||0)*(it.voc||0);
       return[
-        it.name+(it.vahy?' [kg]':''),
+        it.name+(it.vahy?' ⚖':''),
         it.baleni||'—',
         (it.qty||0)+' ks',
         it.vahy?(it.vahy_kg||0).toFixed(3)+' kg':'—',
-        it.vahy?(it.voc_kg||0)+' Kc/kg':(it.voc||0)+' Kc/ks',
-        tot.toFixed(2)+' Kc'
+        it.vahy?(it.voc_kg||0).toFixed(2)+' Kč/kg':(it.voc||0).toFixed(2)+' Kč/ks',
+        tot.toFixed(2)+' Kč'
       ];
     }),
-    headStyles:{fillColor:[80,63,55],textColor:[220,203,188],fontStyle:'bold',fontSize:8},
-    bodyStyles:{fontSize:8,textColor:[30,30,30]},
+    headStyles:{fillColor:[80,63,55],textColor:[220,203,188],fontStyle:'bold',fontSize:8,font:F},
+    bodyStyles:{fontSize:8,textColor:[30,30,30],font:F},
     alternateRowStyles:{fillColor:[240,235,228]},
     columnStyles:{2:{halign:'center'},3:{halign:'center'},4:{halign:'right'},5:{halign:'right',fontStyle:'bold'}},
     margin:{left:14,right:14},styles:{lineColor:[200,188,175],lineWidth:0.2}
   });
   var fy=doc.lastAutoTable.finalY+6;
   doc.setFillColor(218,203,188); doc.rect(14,fy,182,22,'F');
-  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(131,114,97);
+  doc.setFontSize(9); doc.setFont(F,'normal'); doc.setTextColor(131,114,97);
   doc.text('Celkem bez DPH:',120,fy+7); doc.text('DPH 12 %:',120,fy+13);
-  doc.setFont('helvetica','bold'); doc.setTextColor(30,30,30);
-  doc.text(tb.toFixed(2)+' Kc',196,fy+7,{align:'right'});
-  doc.text((tb*VAT).toFixed(2)+' Kc',196,fy+13,{align:'right'});
+  doc.setFont(F,'bold'); doc.setTextColor(30,30,30);
+  doc.text(tb.toFixed(2)+' Kč',196,fy+7,{align:'right'});
+  doc.text((tb*VAT).toFixed(2)+' Kč',196,fy+13,{align:'right'});
   doc.setFontSize(11); doc.text('CELKEM S DPH:',120,fy+21);
-  doc.text((tb*(1+VAT)).toFixed(2)+' Kc',196,fy+21,{align:'right'});
-  if(note){doc.setFontSize(8);doc.setFont('helvetica','italic');doc.setTextColor(131,114,97);doc.text('Poznamka: '+note,14,fy+32,{maxWidth:182});}
+  doc.text((tb*(1+VAT)).toFixed(2)+' Kč',196,fy+21,{align:'right'});
+  if(note){doc.setFontSize(8);doc.setFont(F,'normal');doc.setTextColor(131,114,97);doc.text('Poznámka: '+note,14,fy+32,{maxWidth:182});}
   var sy=Math.min(fy+46,260);
   doc.setDrawColor(131,114,97);doc.setLineWidth(0.3);doc.line(14,sy,80,sy);doc.line(130,sy,196,sy);
-  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(131,114,97);
-  doc.text('Podpis odesilatele',14,sy+5); doc.text('Podpis prijemce',130,sy+5);
+  doc.setFontSize(8);doc.setFont(F,'normal');doc.setTextColor(131,114,97);
+  doc.text('Podpis odesílatele',14,sy+5); doc.text('Podpis příjemce',130,sy+5);
   doc.setFillColor(80,63,55);doc.rect(0,285,210,12,'F');
-  doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(220,203,188);
-  doc.text('DF obchodni s.r.o.  |  ICO: 29279313  |  Sebrov 195, 679 22 Lipuvka  |  divokefarmy.cz',105,292,{align:'center'});
+  doc.setFontSize(7.5);doc.setFont(F,'normal');doc.setTextColor(220,203,188);
+  doc.text('DF obchodní s.r.o.  |  IČO: 29279313  |  Šebrov 195, 679 22 Lipůvka  |  divokefarmy.cz',105,292,{align:'center'});
   return {doc:doc,dlNum:dlNum,datum:datum,tb:tb,note:note};
 }
 
-function stahnoutDL(){
-  var r=_buildDLPDF(); if(!r){alert('Žádné položky.');return;}
+async function stahnoutDL(){
+  if(!_dlOrder||!_dlItems.length){alert('Žádné položky.');return;}
+  var btn=event&&event.target;
+  if(btn){btn.disabled=true;btn.textContent='Generuji…';}
+  var r=await _buildDLPDF();
+  if(btn){btn.disabled=false;btn.textContent='⬇ Stáhnout PDF';}
+  if(!r){alert('Chyba při generování.');return;}
   r.doc.save('dodaci-list-'+r.dlNum+'-'+(_dlOrder.customer_name||'').replace(/\s+/g,'-')+'.pdf');
 }
 
-function odeslatDL(){
-  var r=_buildDLPDF(); if(!r){alert('Žádné položky.');return;}
+async function odeslatDL(){
+  if(!_dlOrder||!_dlItems.length){alert('Žádné položky.');return;}
+  var btn=event&&event.target;
+  if(btn){btn.disabled=true;btn.textContent='Generuji…';}
+  var r=await _buildDLPDF();
+  if(btn){btn.disabled=false;btn.textContent='✉ Odeslat e-mailem';}
+  if(!r){alert('Chyba při generování.');return;}
   var fn='dodaci-list-'+r.dlNum+'-'+(_dlOrder.customer_name||'').replace(/\s+/g,'-')+'.pdf';
   r.doc.save(fn);
   _db.from('delivery_notes').insert([{
@@ -1735,8 +1763,8 @@ function odeslatDL(){
     items:_dlItems.map(function(it){return{name:it.name,baleni:it.baleni||'',qty:it.qty||0,voc:it.voc||0,total:(it.qty||0)*(it.voc||0)};}),
     total_without_vat:r.tb, note:r.note||null
   }]).then(function(res){if(res.error)console.warn('DL save:',res.error.message);});
-  var subj='Dodaci list '+r.dlNum+' – '+(_dlOrder.customer_name||'');
-  var body='Dobry den,\n\nprikladame dodaci list '+r.dlNum+' ze dne '+r.datum+'.\n\nCelkem bez DPH: '+r.tb.toFixed(2)+' Kc\nCelkem s DPH: '+(r.tb*(1+VAT)).toFixed(2)+' Kc\n\nPDF naleznete v priloze.\n\nS pozdravem\nDivoke Farmy';
+  var subj='Dodací list '+r.dlNum+' – '+(_dlOrder.customer_name||'');
+  var body='Dobrý den,\n\npřikládáme dodací list '+r.dlNum+' ze dne '+r.datum+'.\n\nCelkem bez DPH: '+r.tb.toFixed(2)+' Kč\nCelkem s DPH: '+(r.tb*(1+VAT)).toFixed(2)+' Kč\n\nPDF naleznete v příloze.\n\nS pozdravem\nDivoké Farmy';
   setTimeout(function(){
     window.location.href='mailto:'+encodeURIComponent(_dlOrder.email)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
   },500);
