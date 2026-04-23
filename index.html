@@ -1656,18 +1656,33 @@ function addDLItem(){
 }
 
 var _dlFontB64 = null;
+var _dlFontPromise = null;
+function _preloadDLFont(){
+  if(_dlFontPromise) return _dlFontPromise;
+  _dlFontPromise = (async function(){
+    var ctrl = new AbortController();
+    var tid = setTimeout(function(){ ctrl.abort(); }, 20000);
+    try {
+      var resp = await fetch('https://cdn.jsdelivr.net/npm/roboto-fontface@0.10.0/fonts/roboto/Roboto-Regular.ttf', {signal:ctrl.signal});
+      clearTimeout(tid);
+      var buf = await resp.arrayBuffer();
+      var bytes = new Uint8Array(buf);
+      var binary = ''; var chunk = 8192;
+      for(var i=0;i<bytes.byteLength;i+=chunk) binary += String.fromCharCode.apply(null,bytes.subarray(i,i+chunk));
+      _dlFontB64 = btoa(binary);
+    } catch(e) {
+      clearTimeout(tid);
+      console.warn('Font load failed:', e);
+      _dlFontB64 = null;
+    }
+  })();
+  return _dlFontPromise;
+}
 async function _nacistFont(doc){
-  if(!_dlFontB64){
-    var resp = await fetch('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.ttf');
-    var buf = await resp.arrayBuffer();
-    var bytes = new Uint8Array(buf);
-    var binary = ''; var chunk = 8192;
-    for(var i=0;i<bytes.byteLength;i+=chunk) binary += String.fromCharCode.apply(null,bytes.subarray(i,i+chunk));
-    _dlFontB64 = btoa(binary);
-  }
+  await _preloadDLFont();
+  if(!_dlFontB64) return;
   doc.addFileToVFS('Roboto.ttf', _dlFontB64);
   doc.addFont('Roboto.ttf','Roboto','normal');
-  doc.addFileToVFS('Roboto.ttf', _dlFontB64);
   doc.addFont('Roboto.ttf','Roboto','bold');
 }
 
@@ -1986,6 +2001,7 @@ _db.from('product_state').select('*').eq('id',1).single().then(function(res){
     try{ var cp=localStorage.getItem('df_cp'); if(cp){ customProds=JSON.parse(cp); customProds.forEach(function(p){ P.push(Object.assign({_custom:true},p)); }); } }catch(e){}
   }
   buildAll();
+  _preloadDLFont();
 });
 
 </script>
