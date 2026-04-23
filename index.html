@@ -335,7 +335,9 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
 .prod-card-meta{font-size:11px;color:#837261;font-weight:600;display:flex;flex-wrap:wrap;gap:4px 10px;margin-bottom:2px;}
 .prod-card-price{font-size:21px;font-weight:800;color:#503f37;margin-top:auto;padding-top:6px;}
 .prod-price-per{font-size:12px;font-weight:600;color:#837261;}
-.vahy-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(80,120,60,0.12);color:#4a7a30;border:1px solid rgba(80,120,60,0.2);margin-left:7px;vertical-align:middle;}
+.vahy-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(80,120,60,0.12);color:#4a7a30;border:1px solid rgba(80,120,60,0.2);vertical-align:middle;}
+.prod-vahy-sub{display:flex;align-items:center;gap:8px;margin-top:3px;}
+.prod-vahy-kg{font-size:12px;font-weight:700;color:#837261;}
 .prod-card-qty-row{display:flex;align-items:center;gap:6px;}
 .prod-card-total{font-size:12px;font-weight:800;color:#503f37;text-align:right;min-height:15px;}
 /* ── Floating bar ── */
@@ -851,7 +853,10 @@ function buildAll(){
           +(ok?'':'<span class="prod-na-badge">Nedostupné</span>')
         +'</div>'
         +(meta?'<div class="prod-card-meta">'+meta+'</div>':'')
-        +(p.vahy?'<div class="prod-card-price">'+p.voc_kg+' Kč<span class="prod-price-per"> / kg</span><span class="vahy-badge">dle váhy</span></div>':'<div class="prod-card-price">'+p.voc+' Kč<span class="prod-price-per"> / ks</span></div>')
+        +(p.vahy
+          ? '<div class="prod-card-price">'+p.voc+' Kč<span class="prod-price-per"> / ks</span></div>'
+            +'<div class="prod-vahy-sub"><span class="prod-vahy-kg">'+p.voc_kg+' Kč/kg</span><span class="vahy-badge">vážený produkt</span></div>'
+          : '<div class="prod-card-price">'+p.voc+' Kč<span class="prod-price-per"> / ks</span></div>')
         +(ok?'<div class="prod-card-qty-row"><button class="qty-btn" onclick="changeQty('+p.idx+',-1)">−</button><input class="qty-inp" type="number" min="0" step="1" value="0" id="q'+p.idx+'" oninput="recalc()"><button class="qty-btn" onclick="changeQty('+p.idx+',1)">+</button></div>':'')
         +'<div class="prod-card-total" id="l'+p.idx+'"></div>'
         +'</div>';
@@ -1611,7 +1616,7 @@ function renderDLItems(){
     var tot=it.vahy ? (it.vahy_kg||0)*(it.voc_kg||0) : (it.qty||0)*(it.voc||0);
     html+='<tr>'
       +'<td><input class="dl-inp" value="'+_he(it.name)+'" oninput="_dlItems['+i+'].name=this.value">'
-        +(it.vahy?'<span class="vahy-badge" style="margin-left:6px;font-size:9px">dle kg</span>':'')+'</td>'
+        +(it.vahy?'<span class="vahy-badge" style="margin-left:6px;font-size:9px">vážený</span>':'')+'</td>'
       +'<td><input class="dl-inp" value="'+_he(it.baleni||'')+'" oninput="_dlItems['+i+'].baleni=this.value" style="width:72px"></td>'
       +'<td style="text-align:center"><input class="dl-qty" type="number" min="0" value="'+(it.qty||0)+'" oninput="_dlItems['+i+'].qty=parseInt(this.value)||0;recalcDL()"></td>'
       +'<td style="text-align:center">'+(it.vahy
