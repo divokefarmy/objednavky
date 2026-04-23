@@ -812,7 +812,7 @@ function recalc(){
   document.getElementById('tv').textContent = fmt(total);
   var dph = total * VAT;
   document.getElementById('tsdph').innerHTML = total>0
-    ? '<span>DPH 12 %: <strong>'+fmt(dph)+'</strong></span><span>Celkem s DPH: <strong>'+fmt(total*(1+VAT))+'</strong></span>'
+    ? '<span>Celkem s DPH: <strong>'+fmt(total*(1+VAT))+'</strong></span>'
     : '';
   // floating bar
   var fb=document.getElementById('float-bar');
