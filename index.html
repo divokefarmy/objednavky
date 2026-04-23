@@ -286,6 +286,30 @@ footer strong{color:var(--t2);font-weight:800;}
 .dl-make-btn:hover{background:#503f37;color:#DACBBC;}
 .order-pdf-btn{padding:5px 12px;background:rgba(20,20,20,0.07);border:1px solid rgba(20,20,20,0.18);color:#222;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;transition:all .15s;font-family:'Inter',sans-serif;}
 .order-pdf-btn:hover{background:#222;color:#fff;}
+/* ── Customer auth bar ── */
+#auth-bar{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:8px 0 4px;font-size:12px;font-weight:600;color:var(--t3);}
+#auth-bar a{color:#503f37;cursor:pointer;text-decoration:underline;text-underline-offset:2px;transition:color .15s;}
+#auth-bar a:hover{color:#1e1e1e;}
+#auth-bar-user{display:none;align-items:center;gap:10px;}
+#auth-bar-guest{display:flex;align-items:center;gap:6px;}
+.auth-email-lbl{font-weight:700;color:#503f37;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* ── Auth modal ── */
+#auth-ov{position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:1800;display:none;align-items:center;justify-content:center;}
+#auth-ov.show{display:flex;}
+.auth-box{background:var(--card);border:1px solid rgba(80,63,55,0.15);border-radius:24px;padding:32px 28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+.auth-tabs{display:flex;gap:6px;margin-bottom:22px;background:rgba(80,63,55,0.08);border-radius:12px;padding:4px;}
+.auth-tab{flex:1;padding:9px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:#837261;transition:all .18s;font-family:'Inter',sans-serif;}
+.auth-tab.act{background:#503f37;color:#DACBBC;}
+.auth-inp{width:100%;padding:12px 14px;border:1.5px solid rgba(80,63,55,0.20);border-radius:12px;font-size:14px;font-family:'Inter',sans-serif;background:rgba(255,255,255,0.6);color:#1e1e1e;margin-bottom:10px;outline:none;transition:border-color .18s;}
+.auth-inp:focus{border-color:#503f37;}
+/* ── My orders modal ── */
+#myord-ov{position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:1800;display:none;align-items:center;justify-content:center;padding:20px;}
+#myord-ov.show{display:flex;}
+.myord-box{background:var(--card);border:1px solid rgba(80,63,55,0.15);border-radius:24px;padding:28px;width:100%;max-width:680px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+.myord-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.myord-title{font-size:17px;font-weight:800;color:#1e1e1e;}
+.myord-close{font-size:12px;font-weight:700;color:#837261;cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid rgba(80,63,55,0.18);background:rgba(80,63,55,0.06);transition:all .15s;}
+.myord-close:hover{background:#503f37;color:#DACBBC;}
 /* ── Light theme ── */
 body.light{--bg:#f5f0ea;--bg2:#ede7df;--bg3:#e4dbd0;--bg4:#dbd0c4;--border:rgba(80,63,55,0.18);--b2:rgba(80,63,55,0.30);--text:#1e1e1e;--t2:#503f37;--t3:#837261;--gold:#503f37;--gold2:#6b5548;--gold3:#3a2f2a;--gdim:rgba(80,63,55,0.08);--shadow:0 4px 24px rgba(0,0,0,0.09);--shadow-gold:0 0 0 1px rgba(80,63,55,0.15),0 8px 32px rgba(0,0,0,0.12);}
 body.light .summary,body.light .pnote{background:#fff;border-color:rgba(80,63,55,0.12);}
@@ -337,6 +361,32 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
 </style>
 </head>
 <body>
+
+<!-- Auth modal -->
+<div id="auth-ov">
+  <div class="auth-box">
+    <div class="auth-tabs">
+      <button id="tab-login" class="auth-tab act" onclick="switchAuthTab('login')">Přihlásit se</button>
+      <button id="tab-register" class="auth-tab" onclick="switchAuthTab('register')">Registrovat</button>
+    </div>
+    <input class="auth-inp" type="email" id="auth-email" placeholder="E-mail" autocomplete="email">
+    <input class="auth-inp" type="password" id="auth-pw" placeholder="Heslo (min. 6 znaků)" autocomplete="current-password">
+    <div class="pw-err" id="auth-err"></div>
+    <button class="pw-btn" id="auth-submit-btn" onclick="doAuthSubmit()">Přihlásit se</button>
+    <a class="pw-cancel" onclick="closeAuthModal()">Zrušit</a>
+  </div>
+</div>
+
+<!-- My orders modal -->
+<div id="myord-ov">
+  <div class="myord-box">
+    <div class="myord-hd">
+      <div class="myord-title">Moje objednávky</div>
+      <button class="myord-close" onclick="closeMyOrders()">✕ Zavřít</button>
+    </div>
+    <div id="myord-list"></div>
+  </div>
+</div>
 
 <div id="pw-screen">
   <div class="pw-card">
@@ -586,6 +636,20 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
         <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Přepnout téma">☀</button>
         <button class="btn-adm" onclick="openPw()">⚙ Správa skladu</button>
       </div>
+    </div>
+  </div>
+
+  <div id="auth-bar">
+    <div id="auth-bar-guest">
+      <span>Historie objednávek:</span>
+      <a onclick="openAuthModal('login')">Přihlásit se</a>
+      <span>·</span>
+      <a onclick="openAuthModal('register')">Registrovat</a>
+    </div>
+    <div id="auth-bar-user">
+      <span class="auth-email-lbl" id="auth-email-lbl"></span>
+      <a onclick="openMyOrders()">📋 Moje objednávky</a>
+      <a onclick="doLogout()" style="color:#a04438">Odhlásit</a>
     </div>
   </div>
 
@@ -866,7 +930,8 @@ function potvrditObjednavku(){
     address: adr||null,
     note: poz||null,
     items: items.map(function(it){ return {name:it.name,baleni:it.baleni||'',qty:it.qty,voc:it.voc,total:it.total}; }),
-    total_without_vat: tb
+    total_without_vat: tb,
+    user_id: _user ? _user.id : null
   }]).then(function(res){
     if(btn){ btn.disabled=false; btn.textContent='Potvrdit objednávku →'; }
     if(res.error){ alert('Nepodařilo se odeslat objednávku. Zkuste to prosím znovu.\n('+res.error.message+')'); return; }
@@ -948,7 +1013,8 @@ function odeslat(){
     address: adr||null,
     note: poz||null,
     items: items.map(function(it){ return {name:it.name,baleni:it.baleni||'',qty:it.qty,voc:it.voc,total:it.total}; }),
-    total_without_vat: tb
+    total_without_vat: tb,
+    user_id: _user ? _user.id : null
   }]).then(function(res){ if(res.error) console.warn('Supabase insert error:', res.error.message); });
 
   var subj='Objednávka – '+jm+(fi?' / '+fi:'')+' – '+datum;
@@ -1690,6 +1756,129 @@ function smazatDL(id,idx){
     renderDodaciListy();
   });
 }
+
+// ── Customer Auth ──
+var _user = null;
+
+function _onAuthChange(user){
+  _user = user;
+  var guest = document.getElementById('auth-bar-guest');
+  var loggedIn = document.getElementById('auth-bar-user');
+  var lbl = document.getElementById('auth-email-lbl');
+  if(user){
+    if(guest) guest.style.display='none';
+    if(loggedIn) loggedIn.style.display='flex';
+    if(lbl) lbl.textContent = user.email;
+    _prefillFromLastOrder(user.id);
+  } else {
+    if(guest) guest.style.display='flex';
+    if(loggedIn) loggedIn.style.display='none';
+  }
+}
+
+function openAuthModal(tab){
+  document.getElementById('auth-ov').className='show';
+  document.getElementById('auth-err').textContent='';
+  document.getElementById('auth-email').value='';
+  document.getElementById('auth-pw').value='';
+  switchAuthTab(tab||'login');
+  setTimeout(function(){ document.getElementById('auth-email').focus(); },80);
+}
+function closeAuthModal(){ document.getElementById('auth-ov').className=''; }
+
+function switchAuthTab(tab){
+  var isLogin=tab==='login';
+  document.getElementById('tab-login').classList.toggle('act',isLogin);
+  document.getElementById('tab-register').classList.toggle('act',!isLogin);
+  document.getElementById('auth-submit-btn').textContent=isLogin?'Přihlásit se':'Registrovat';
+  document.getElementById('auth-ov').dataset.tab=tab;
+}
+
+function doAuthSubmit(){
+  var email=document.getElementById('auth-email').value.trim();
+  var pw=document.getElementById('auth-pw').value;
+  var err=document.getElementById('auth-err');
+  var tab=document.getElementById('auth-ov').dataset.tab||'login';
+  if(!email||!pw){ err.textContent='Vyplňte e-mail a heslo.'; return; }
+  if(pw.length<6){ err.textContent='Heslo musí mít alespoň 6 znaků.'; return; }
+  var btn=document.getElementById('auth-submit-btn');
+  btn.disabled=true; btn.textContent='Načítám…';
+  var p=tab==='login'
+    ? _db.auth.signInWithPassword({email:email,password:pw})
+    : _db.auth.signUp({email:email,password:pw});
+  p.then(function(res){
+    btn.disabled=false; btn.textContent=tab==='login'?'Přihlásit se':'Registrovat';
+    if(res.error){ err.textContent=res.error.message; return; }
+    closeAuthModal();
+    if(tab==='register') alert('Registrace proběhla úspěšně! Jste přihlášeni.');
+  });
+}
+
+function doLogout(){
+  _db.auth.signOut();
+}
+
+function openMyOrders(){
+  document.getElementById('myord-ov').className='show';
+  loadMyOrders();
+}
+function closeMyOrders(){ document.getElementById('myord-ov').className=''; }
+
+function loadMyOrders(){
+  if(!_user) return;
+  var list=document.getElementById('myord-list');
+  list.innerHTML='<div class="orders-msg">Načítám…</div>';
+  _db.from('orders').select('*').eq('user_id',_user.id).order('created_at',{ascending:false}).then(function(res){
+    if(res.error){ list.innerHTML='<div class="orders-msg">Chyba: '+res.error.message+'</div>'; return; }
+    var orders=res.data||[];
+    if(!orders.length){ list.innerHTML='<div class="orders-msg">Zatím žádné objednávky.</div>'; return; }
+    var stLabel={nova:'Nová',vyrizuje_se:'Vyřizuje se',vyrizena:'Vyřízena',storno:'Storno',archivovana:'Archivováno'};
+    var stCls={nova:'st-nova',vyrizuje_se:'st-vyrizuje',vyrizena:'st-vyrizena',storno:'st-storno',archivovana:'st-archivovana'};
+    var html='<div class="orders-list">';
+    orders.forEach(function(o){
+      var d=new Date(o.created_at).toLocaleDateString('cs-CZ');
+      var st=o.status||'nova';
+      var items=o.items||[];
+      var irows=items.map(function(it){
+        return '<tr><td>'+(it.name||'')+(it.baleni?' ('+it.baleni+')':'')+'</td>'
+          +'<td style="text-align:center">'+it.qty+' ks</td>'
+          +'<td style="text-align:right;font-weight:800">'+it.total.toFixed(2)+' Kč</td></tr>';
+      }).join('');
+      html+='<div class="order-card">'
+        +'<div class="order-hd" onclick="this.nextElementSibling.classList.toggle(\'show\')">'
+        +'<span class="order-date">'+d+'</span>'
+        +'<span class="order-total">'+o.total_without_vat.toFixed(2)+' Kč</span>'
+        +'<span class="order-status '+(stCls[st]||'st-nova')+'">'+(stLabel[st]||'Nová')+'</span>'
+        +'</div>'
+        +'<div class="order-body">'
+        +'<table class="order-items-tbl"><tr><th>Produkt</th><th style="text-align:center">Množství</th><th style="text-align:right">Celkem</th></tr>'+irows+'</table>'
+        +'</div></div>';
+    });
+    html+='</div>';
+    list.innerHTML=html;
+  });
+}
+
+function _prefillFromLastOrder(userId){
+  var jmeno=document.getElementById('jmeno');
+  if(jmeno&&jmeno.value.trim()) return;
+  _db.from('orders').select('customer_name,company,email,phone,address').eq('user_id',userId).order('created_at',{ascending:false}).limit(1).then(function(res){
+    if(res.error||!res.data||!res.data.length) return;
+    var o=res.data[0];
+    var map={jmeno:'customer_name',firma:'company',email:'email',tel:'phone',adr:'address'};
+    Object.keys(map).forEach(function(id){
+      var el=document.getElementById(id);
+      if(el&&!el.value.trim()&&o[map[id]]) el.value=o[map[id]];
+    });
+  });
+}
+
+// Init auth state
+_db.auth.getUser().then(function(res){ if(res.data&&res.data.user) _onAuthChange(res.data.user); });
+_db.auth.onAuthStateChange(function(event,session){ _onAuthChange(session?session.user:null); });
+
+// Auth modal keyboard
+document.getElementById('auth-pw').addEventListener('keydown',function(e){ if(e.key==='Enter') doAuthSubmit(); });
 
 function toggleTheme(){
   var light=document.body.classList.toggle('light');
