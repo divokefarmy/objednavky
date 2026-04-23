@@ -281,6 +281,11 @@ footer strong{color:var(--t2);font-weight:800;}
 .dl-tval{font-size:22px;font-weight:800;color:#1e1e1e;}
 .dl-note-inp{width:100%;padding:10px 12px;background:rgba(255,255,255,0.55);border:1px solid rgba(80,63,55,0.20);border-radius:10px;font-size:13px;font-weight:600;color:#1e1e1e;outline:none;font-family:'Inter',sans-serif;resize:vertical;min-height:56px;margin-bottom:14px;}
 .dl-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.dl-cust-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;padding:14px;background:rgba(255,255,255,0.4);border-radius:12px;border:1px solid rgba(80,63,55,0.12);}
+.dl-cf label{display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#837261;margin-bottom:4px;}
+.dl-cf input{width:100%;padding:8px 11px;background:#fff;border:1px solid rgba(80,63,55,0.20);border-radius:8px;font-size:13px;font-weight:600;color:#1e1e1e;outline:none;font-family:'Inter',sans-serif;}
+.dl-cf input:focus{border-color:#837261;}
+.dl-add-row select{padding:9px 11px;background:#fff;border:1px solid rgba(80,63,55,0.20);border-radius:10px;font-size:13px;color:#503f37;font-weight:600;outline:none;font-family:'Inter',sans-serif;}
 .dl-send-btn{flex:2;padding:15px;background:#503f37;color:#DACBBC;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;letter-spacing:.04em;}
 .dl-send-btn:hover{background:#1e1e1e;}
 .dl-pdf-btn{flex:1;padding:15px;background:rgba(80,63,55,0.12);color:#503f37;border:1px solid rgba(80,63,55,0.20);border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;}
@@ -526,8 +531,11 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
       <button class="orders-reload" onclick="loadOrders()">↻ Obnovit seznam</button>
     </div>
     <div id="pane-dl" style="display:none;">
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+        <button class="adm-prod-save" onclick="openNovyDodaciList()" style="background:#4a7a30;font-size:13px;padding:10px 20px;">+ Nový dodací list</button>
+        <button class="orders-reload" onclick="loadDodaciListy()" style="margin:0">↻ Obnovit seznam</button>
+      </div>
       <div id="dl-list"><div class="orders-msg">Načítám dodací listy…</div></div>
-      <button class="orders-reload" onclick="loadDodaciListy()">↻ Obnovit seznam</button>
     </div>
   </div>
 </div>
@@ -537,16 +545,24 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
     <div class="dl-hd">
       <div>
         <div class="dl-title">Dodací list</div>
-        <div class="dl-sub"><span id="dl-cust"></span><br><span id="dl-email" style="font-size:12px;font-weight:500;"></span></div>
       </div>
       <button class="dl-close" onclick="closeDodaciList()">✕ Zavřít</button>
     </div>
-    <div id="dl-items-wrap"></div>
-    <div class="dl-add-row">
-      <input id="dl-new-name" placeholder="Název nové položky…">
-      <input id="dl-new-voc" type="number" placeholder="Cena/ks" style="max-width:110px;flex:none">
-      <button class="dl-add-btn" onclick="addDLItem()">+ Přidat položku</button>
+    <div class="dl-cust-grid">
+      <div class="dl-cf"><label>Jméno zákazníka *</label><input id="dl-f-name" placeholder="Jan Novák"></div>
+      <div class="dl-cf"><label>Firma</label><input id="dl-f-company" placeholder="Nepovinné"></div>
+      <div class="dl-cf"><label>E-mail</label><input id="dl-f-email" type="email" placeholder="email@firma.cz"></div>
+      <div class="dl-cf"><label>Telefon</label><input id="dl-f-phone" placeholder="+420 …"></div>
     </div>
+    <div class="dl-add-row">
+      <select id="dl-kat-sel" onchange="dlProdZKatalogu()" style="flex:1.2">
+        <option value="">— přidat z katalogu —</option>
+      </select>
+      <input id="dl-new-name" placeholder="nebo název ručně…" style="flex:1.5">
+      <input id="dl-new-voc" type="number" placeholder="Kč/ks" style="max-width:90px;flex:none">
+      <button class="dl-add-btn" onclick="addDLItem()">+ Přidat</button>
+    </div>
+    <div id="dl-items-wrap"></div>
     <div class="dl-totals">
       <span class="dl-tlbl">Celkem bez DPH:</span>
       <span class="dl-tval" id="dl-total-val">0 Kč</span>
@@ -1592,6 +1608,41 @@ function generatePDF(){
 // ── Dodací listy ──
 var _dlItems=[], _dlOrder=null;
 
+function _fillDLKatalog(){
+  var sel=document.getElementById('dl-kat-sel');
+  if(!sel) return;
+  sel.innerHTML='<option value="">— přidat z katalogu —</option>';
+  var cats={};
+  P.forEach(function(p,i){ if(!deleted[i]&&!archived[i]){ if(!cats[p.cat]) cats[p.cat]=[]; cats[p.cat].push({i:i,p:p}); } });
+  Object.keys(cats).forEach(function(cat){
+    var og=document.createElement('optgroup'); og.label=cat;
+    cats[cat].forEach(function(item){
+      var o=document.createElement('option');
+      o.value=item.i;
+      o.textContent=item.p.name+(item.p.baleni?' ('+item.p.baleni+')':'');
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+
+function dlProdZKatalogu(){
+  var sel=document.getElementById('dl-kat-sel');
+  var idx=sel.value; if(!idx) return;
+  var p=P[parseInt(idx)];
+  if(!p) return;
+  document.getElementById('dl-new-name').value=p.name;
+  document.getElementById('dl-new-voc').value=p.vahy?p.voc_kg:p.voc;
+  sel.value='';
+}
+
+function _openDLOverlay(){
+  _fillDLKatalog();
+  document.getElementById('dl-note').value='';
+  renderDLItems();
+  document.getElementById('dl-ov').style.display='block';
+}
+
 function openDodaciList(idx){
   _dlOrder=_orders[idx];
   _dlItems=(_dlOrder.items||[]).map(function(it){
@@ -1600,12 +1651,23 @@ function openDodaciList(idx){
     var voc_kg=match?match.voc_kg:0;
     return Object.assign({},it,{vahy:vahy,voc_kg:voc_kg,vahy_kg:0});
   });
-  document.getElementById('dl-cust').textContent=_dlOrder.customer_name+(_dlOrder.company?' / '+_dlOrder.company:'');
-  document.getElementById('dl-email').textContent=_dlOrder.email+(_dlOrder.phone?' · '+_dlOrder.phone:'');
-  document.getElementById('dl-note').value='';
-  renderDLItems();
-  document.getElementById('dl-ov').style.display='block';
+  document.getElementById('dl-f-name').value=_dlOrder.customer_name||'';
+  document.getElementById('dl-f-company').value=_dlOrder.company||'';
+  document.getElementById('dl-f-email').value=_dlOrder.email||'';
+  document.getElementById('dl-f-phone').value=_dlOrder.phone||'';
+  _openDLOverlay();
 }
+
+function openNovyDodaciList(){
+  _dlOrder=null;
+  _dlItems=[];
+  document.getElementById('dl-f-name').value='';
+  document.getElementById('dl-f-company').value='';
+  document.getElementById('dl-f-email').value='';
+  document.getElementById('dl-f-phone').value='';
+  _openDLOverlay();
+}
+
 function closeDodaciList(){ document.getElementById('dl-ov').style.display='none'; _dlItems=[]; _dlOrder=null; }
 
 function _he(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
@@ -1660,11 +1722,17 @@ function _getDLMeta(){
   var datum=new Date().toLocaleDateString('cs-CZ');
   var dlNum='DL-'+new Date().toISOString().slice(0,10).replace(/-/g,'');
   var note=document.getElementById('dl-note').value.trim();
-  return {tb:tb,datum:datum,dlNum:dlNum,note:note};
+  var cust={
+    name: document.getElementById('dl-f-name').value.trim() || ((_dlOrder&&_dlOrder.customer_name)||'Zákazník'),
+    company: document.getElementById('dl-f-company').value.trim(),
+    email: document.getElementById('dl-f-email').value.trim(),
+    phone: document.getElementById('dl-f-phone').value.trim()
+  };
+  return {tb:tb,datum:datum,dlNum:dlNum,note:note,cust:cust};
 }
 
 function stahnoutDL(){
-  if(!_dlOrder||!_dlItems.length){alert('Žádné položky.');return;}
+  if(!_dlItems.length){alert('Žádné položky.');return;}
   var m=_getDLMeta();
   var rows='';
   _dlItems.forEach(function(it){
@@ -1679,10 +1747,10 @@ function stahnoutDL(){
       +'</tr>';
   });
   var info='';
-  if(_dlOrder.company) info+='<div>'+_dlOrder.company+'</div>';
-  info+='<div>'+_dlOrder.email+'</div>';
-  if(_dlOrder.phone) info+='<div>'+_dlOrder.phone+'</div>';
-  if(_dlOrder.address) info+='<div>'+_dlOrder.address+'</div>';
+  if(m.cust.company) info+='<div>'+m.cust.company+'</div>';
+  if(m.cust.email) info+='<div>'+m.cust.email+'</div>';
+  if(m.cust.phone) info+='<div>'+m.cust.phone+'</div>';
+  if(_dlOrder&&_dlOrder.address) info+='<div>'+_dlOrder.address+'</div>';
 
   var html='<!DOCTYPE html><html><head><meta charset="utf-8"><style>'
     +'*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}'
@@ -1710,7 +1778,7 @@ function stahnoutDL(){
     +'<div class="header"><h1>DIVOKÉ FARMY — DODACÍ LIST</h1>'
     +'<div style="text-align:right"><div style="font-size:10pt;font-weight:800">'+m.dlNum+'</div><small>'+m.datum+'</small></div></div>'
     +'<div class="recipient"><div class="section-label">Příjemce</div>'
-    +'<div class="name">'+_dlOrder.customer_name+'</div>'+info+'</div>'
+    +'<div class="name">'+m.cust.name+'</div>'+info+'</div>'
     +'<table><thead><tr><th>Produkt</th><th>Objem</th><th style="text-align:center">Ks</th><th style="text-align:center">Váha (kg)</th><th style="text-align:right">Cena/jedn.</th><th style="text-align:right">Celkem</th></tr></thead><tbody>'+rows+'</tbody></table>'
     +'<div class="totals">'
     +'<div class="row"><span>Celkem bez DPH:</span><span>'+m.tb.toFixed(2)+' Kč</span></div>'
@@ -1729,20 +1797,24 @@ function stahnoutDL(){
 }
 
 function odeslatDL(){
-  if(!_dlOrder||!_dlItems.length){alert('Žádné položky.');return;}
+  if(!_dlItems.length){alert('Žádné položky.');return;}
   var m=_getDLMeta();
+  if(!m.cust.name){alert('Zadejte prosím jméno zákazníka.');return;}
   stahnoutDL();
   _db.from('delivery_notes').insert([{
-    order_id:_dlOrder.id, customer_name:_dlOrder.customer_name,
-    customer_email:_dlOrder.email, company:_dlOrder.company||null,
-    phone:_dlOrder.phone||null,
+    order_id:_dlOrder?_dlOrder.id:null,
+    customer_name:m.cust.name,
+    customer_email:m.cust.email||null,
+    company:m.cust.company||null,
+    phone:m.cust.phone||null,
     items:_dlItems.map(function(it){return{name:it.name,baleni:it.baleni||'',qty:it.qty||0,voc:it.voc||0,total:(it.qty||0)*(it.voc||0)};}),
     total_without_vat:m.tb, note:m.note||null
   }]).then(function(res){if(res.error)console.warn('DL save:',res.error.message);});
-  var subj='Dodací list '+m.dlNum+' – '+(_dlOrder.customer_name||'');
+  if(!m.cust.email){return;}
+  var subj='Dodací list '+m.dlNum+' – '+m.cust.name;
   var body='Dobrý den,\n\npřikládáme dodací list '+m.dlNum+' ze dne '+m.datum+'.\n\nCelkem bez DPH: '+m.tb.toFixed(2)+' Kč\nCelkem s DPH: '+(m.tb*(1+VAT)).toFixed(2)+' Kč\n\nS pozdravem\nDivoké Farmy';
   setTimeout(function(){
-    window.location.href='mailto:'+encodeURIComponent(_dlOrder.email)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
+    window.location.href='mailto:'+encodeURIComponent(m.cust.email)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
   },800);
 }
 
