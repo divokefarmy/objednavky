@@ -1655,134 +1655,95 @@ function addDLItem(){
   renderDLItems();
 }
 
-var _dlFontB64 = null;
-var _dlFontPromise = null;
-function _preloadDLFont(){
-  if(_dlFontPromise) return _dlFontPromise;
-  _dlFontPromise = (async function(){
-    var ctrl = new AbortController();
-    var tid = setTimeout(function(){ ctrl.abort(); }, 20000);
-    try {
-      var resp = await fetch('https://cdn.jsdelivr.net/npm/roboto-fontface@0.10.0/fonts/roboto/Roboto-Regular.ttf', {signal:ctrl.signal});
-      clearTimeout(tid);
-      var buf = await resp.arrayBuffer();
-      var bytes = new Uint8Array(buf);
-      var binary = ''; var chunk = 8192;
-      for(var i=0;i<bytes.byteLength;i+=chunk) binary += String.fromCharCode.apply(null,bytes.subarray(i,i+chunk));
-      _dlFontB64 = btoa(binary);
-    } catch(e) {
-      clearTimeout(tid);
-      console.warn('Font load failed:', e);
-      _dlFontB64 = null;
-    }
-  })();
-  return _dlFontPromise;
-}
-async function _nacistFont(doc){
-  await _preloadDLFont();
-  if(!_dlFontB64) return;
-  doc.addFileToVFS('Roboto.ttf', _dlFontB64);
-  doc.addFont('Roboto.ttf','Roboto','normal');
-  doc.addFont('Roboto.ttf','Roboto','bold');
-}
-
-async function _buildDLPDF(){
-  if(!_dlOrder||!_dlItems.length) return null;
+function _getDLMeta(){
   var tb=_dlItems.reduce(function(s,it){return s+(it.vahy?(it.vahy_kg||0)*(it.voc_kg||0):(it.qty||0)*(it.voc||0));},0);
   var datum=new Date().toLocaleDateString('cs-CZ');
   var dlNum='DL-'+new Date().toISOString().slice(0,10).replace(/-/g,'');
   var note=document.getElementById('dl-note').value.trim();
-  var jsPDF=window.jspdf.jsPDF;
-  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  await _nacistFont(doc);
-  var F='Roboto';
-  doc.setFillColor(80,63,55); doc.rect(0,0,210,22,'F');
-  doc.setTextColor(220,203,188); doc.setFontSize(14); doc.setFont(F,'bold');
-  doc.text('DIVOKÉ FARMY  —  DODACÍ LIST',14,14);
-  doc.setFontSize(9); doc.setFont(F,'normal');
-  doc.text(dlNum+'  |  '+datum,14,20);
-  doc.text('DF obchodní s.r.o.  |  adam@divokefarmy.cz  |  +420 777 186 246',196,20,{align:'right'});
-  doc.setTextColor(30,30,30);
-  var y=32; doc.setFontSize(9); doc.setFont(F,'bold');
-  doc.text('PŘÍJEMCE',14,y);
-  doc.setDrawColor(131,114,97); doc.setLineWidth(0.3); doc.line(14,y+2,90,y+2); y+=7;
-  doc.setFont(F,'normal');
-  var info=[_dlOrder.customer_name];
-  if(_dlOrder.company) info.push(_dlOrder.company);
-  info.push('E-mail: '+_dlOrder.email);
-  if(_dlOrder.phone) info.push('Tel: '+_dlOrder.phone);
-  if(_dlOrder.address) info.push(_dlOrder.address);
-  info.forEach(function(l){doc.text(l,14,y);y+=5;}); y+=4;
-  doc.autoTable({startY:y,
-    head:[['Produkt','Objem','Ks','Váha (kg)','Cena/jedn.','Celkem']],
-    body:_dlItems.map(function(it){
-      var tot=it.vahy?(it.vahy_kg||0)*(it.voc_kg||0):(it.qty||0)*(it.voc||0);
-      return[
-        it.name+(it.vahy?' ⚖':''),
-        it.baleni||'—',
-        (it.qty||0)+' ks',
-        it.vahy?(it.vahy_kg||0).toFixed(3)+' kg':'—',
-        it.vahy?(it.voc_kg||0).toFixed(2)+' Kč/kg':(it.voc||0).toFixed(2)+' Kč/ks',
-        tot.toFixed(2)+' Kč'
-      ];
-    }),
-    headStyles:{fillColor:[80,63,55],textColor:[220,203,188],fontStyle:'bold',fontSize:8,font:F},
-    bodyStyles:{fontSize:8,textColor:[30,30,30],font:F},
-    alternateRowStyles:{fillColor:[240,235,228]},
-    columnStyles:{2:{halign:'center'},3:{halign:'center'},4:{halign:'right'},5:{halign:'right',fontStyle:'bold'}},
-    margin:{left:14,right:14},styles:{lineColor:[200,188,175],lineWidth:0.2}
+  return {tb:tb,datum:datum,dlNum:dlNum,note:note};
+}
+
+function stahnoutDL(){
+  if(!_dlOrder||!_dlItems.length){alert('Žádné položky.');return;}
+  var m=_getDLMeta();
+  var rows='';
+  _dlItems.forEach(function(it){
+    var tot=it.vahy?(it.vahy_kg||0)*(it.voc_kg||0):(it.qty||0)*(it.voc||0);
+    rows+='<tr>'
+      +'<td>'+it.name+(it.vahy?' <span style="font-size:10px;color:#4a7a30">⚖ vážený</span>':'')+'</td>'
+      +'<td>'+( it.baleni||'—')+'</td>'
+      +'<td style="text-align:center">'+(it.qty||0)+' ks</td>'
+      +'<td style="text-align:center">'+(it.vahy?(it.vahy_kg||0).toFixed(3)+' kg':'—')+'</td>'
+      +'<td style="text-align:right">'+(it.vahy?(it.voc_kg||0).toFixed(2)+' Kč/kg':(it.voc||0).toFixed(2)+' Kč/ks')+'</td>'
+      +'<td style="text-align:right;font-weight:800">'+tot.toFixed(2)+' Kč</td>'
+      +'</tr>';
   });
-  var fy=doc.lastAutoTable.finalY+6;
-  doc.setFillColor(218,203,188); doc.rect(14,fy,182,22,'F');
-  doc.setFontSize(9); doc.setFont(F,'normal'); doc.setTextColor(131,114,97);
-  doc.text('Celkem bez DPH:',120,fy+7); doc.text('DPH 12 %:',120,fy+13);
-  doc.setFont(F,'bold'); doc.setTextColor(30,30,30);
-  doc.text(tb.toFixed(2)+' Kč',196,fy+7,{align:'right'});
-  doc.text((tb*VAT).toFixed(2)+' Kč',196,fy+13,{align:'right'});
-  doc.setFontSize(11); doc.text('CELKEM S DPH:',120,fy+21);
-  doc.text((tb*(1+VAT)).toFixed(2)+' Kč',196,fy+21,{align:'right'});
-  if(note){doc.setFontSize(8);doc.setFont(F,'normal');doc.setTextColor(131,114,97);doc.text('Poznámka: '+note,14,fy+32,{maxWidth:182});}
-  var sy=Math.min(fy+46,260);
-  doc.setDrawColor(131,114,97);doc.setLineWidth(0.3);doc.line(14,sy,80,sy);doc.line(130,sy,196,sy);
-  doc.setFontSize(8);doc.setFont(F,'normal');doc.setTextColor(131,114,97);
-  doc.text('Podpis odesílatele',14,sy+5); doc.text('Podpis příjemce',130,sy+5);
-  doc.setFillColor(80,63,55);doc.rect(0,285,210,12,'F');
-  doc.setFontSize(7.5);doc.setFont(F,'normal');doc.setTextColor(220,203,188);
-  doc.text('DF obchodní s.r.o.  |  IČO: 29279313  |  Šebrov 195, 679 22 Lipůvka  |  divokefarmy.cz',105,292,{align:'center'});
-  return {doc:doc,dlNum:dlNum,datum:datum,tb:tb,note:note};
+  var info='';
+  if(_dlOrder.company) info+='<div>'+_dlOrder.company+'</div>';
+  info+='<div>'+_dlOrder.email+'</div>';
+  if(_dlOrder.phone) info+='<div>'+_dlOrder.phone+'</div>';
+  if(_dlOrder.address) info+='<div>'+_dlOrder.address+'</div>';
+
+  var html='<!DOCTYPE html><html><head><meta charset="utf-8"><style>'
+    +'*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}'
+    +'body{background:#fff;color:#1e1e1e;padding:20mm 14mm;font-size:9pt;}'
+    +'.header{background:#503f37;color:#DACBBC;padding:10px 14px;margin:-20mm -14mm 14mm;display:flex;justify-content:space-between;align-items:center;}'
+    +'.header h1{font-size:13pt;font-weight:800;letter-spacing:.03em;}'
+    +'.header small{font-size:7.5pt;opacity:.85;}'
+    +'.section-label{font-size:7.5pt;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#837261;border-bottom:1px solid #d6cbbf;padding-bottom:3px;margin-bottom:8px;}'
+    +'.recipient{margin-bottom:14px;}'
+    +'.recipient .name{font-size:11pt;font-weight:800;margin-bottom:3px;}'
+    +'.recipient div{font-size:8.5pt;color:#503f37;line-height:1.6;}'
+    +'table{width:100%;border-collapse:collapse;margin-bottom:10px;}'
+    +'th{background:#503f37;color:#DACBBC;font-size:7.5pt;font-weight:800;padding:5px 7px;text-align:left;}'
+    +'td{padding:5px 7px;font-size:8.5pt;border-bottom:1px solid #e8e0d6;}'
+    +'tr:nth-child(even) td{background:#f5f0ea;}'
+    +'.totals{background:#DAC9B8;padding:10px 14px;border-radius:6px;display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-bottom:14px;}'
+    +'.totals .row{display:flex;gap:40px;font-size:8.5pt;color:#503f37;}'
+    +'.totals .big{font-size:11pt;font-weight:800;color:#1e1e1e;}'
+    +'.note{font-size:8pt;color:#837261;font-style:italic;margin-bottom:14px;}'
+    +'.sigs{display:flex;justify-content:space-between;margin-top:24px;}'
+    +'.sig{border-top:1px solid #b0a090;padding-top:4px;width:44%;font-size:7.5pt;color:#837261;}'
+    +'.footer{position:fixed;bottom:8mm;left:14mm;right:14mm;background:#503f37;color:#DACBBC;text-align:center;font-size:7pt;padding:5px;}'
+    +'@media print{.footer{position:fixed;}}'
+    +'</style></head><body>'
+    +'<div class="header"><h1>DIVOKÉ FARMY — DODACÍ LIST</h1>'
+    +'<div style="text-align:right"><div style="font-size:10pt;font-weight:800">'+m.dlNum+'</div><small>'+m.datum+'</small></div></div>'
+    +'<div class="recipient"><div class="section-label">Příjemce</div>'
+    +'<div class="name">'+_dlOrder.customer_name+'</div>'+info+'</div>'
+    +'<table><thead><tr><th>Produkt</th><th>Objem</th><th style="text-align:center">Ks</th><th style="text-align:center">Váha (kg)</th><th style="text-align:right">Cena/jedn.</th><th style="text-align:right">Celkem</th></tr></thead><tbody>'+rows+'</tbody></table>'
+    +'<div class="totals">'
+    +'<div class="row"><span>Celkem bez DPH:</span><span>'+m.tb.toFixed(2)+' Kč</span></div>'
+    +'<div class="row"><span>DPH 12 %:</span><span>'+(m.tb*VAT).toFixed(2)+' Kč</span></div>'
+    +'<div class="row big"><span>CELKEM S DPH:</span><span>'+(m.tb*(1+VAT)).toFixed(2)+' Kč</span></div>'
+    +'</div>'
+    +(m.note?'<div class="note">Poznámka: '+m.note+'</div>':'')
+    +'<div class="sigs"><div class="sig">Podpis odesílatele</div><div class="sig">Podpis příjemce</div></div>'
+    +'<div class="footer">DF obchodní s.r.o. &nbsp;|&nbsp; IČO: 29279313 &nbsp;|&nbsp; Šebrov 195, 679 22 Lipůvka &nbsp;|&nbsp; divokefarmy.cz</div>'
+    +'</body></html>';
+  var win=window.open('','_blank','width=850,height=1100');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(function(){ win.print(); },400);
 }
 
-async function stahnoutDL(){
+function odeslatDL(){
   if(!_dlOrder||!_dlItems.length){alert('Žádné položky.');return;}
-  var btn=event&&event.target;
-  if(btn){btn.disabled=true;btn.textContent='Generuji…';}
-  var r=await _buildDLPDF();
-  if(btn){btn.disabled=false;btn.textContent='⬇ Stáhnout PDF';}
-  if(!r){alert('Chyba při generování.');return;}
-  r.doc.save('dodaci-list-'+r.dlNum+'-'+(_dlOrder.customer_name||'').replace(/\s+/g,'-')+'.pdf');
-}
-
-async function odeslatDL(){
-  if(!_dlOrder||!_dlItems.length){alert('Žádné položky.');return;}
-  var btn=event&&event.target;
-  if(btn){btn.disabled=true;btn.textContent='Generuji…';}
-  var r=await _buildDLPDF();
-  if(btn){btn.disabled=false;btn.textContent='✉ Odeslat e-mailem';}
-  if(!r){alert('Chyba při generování.');return;}
-  var fn='dodaci-list-'+r.dlNum+'-'+(_dlOrder.customer_name||'').replace(/\s+/g,'-')+'.pdf';
-  r.doc.save(fn);
+  var m=_getDLMeta();
+  stahnoutDL();
   _db.from('delivery_notes').insert([{
     order_id:_dlOrder.id, customer_name:_dlOrder.customer_name,
     customer_email:_dlOrder.email, company:_dlOrder.company||null,
     phone:_dlOrder.phone||null,
     items:_dlItems.map(function(it){return{name:it.name,baleni:it.baleni||'',qty:it.qty||0,voc:it.voc||0,total:(it.qty||0)*(it.voc||0)};}),
-    total_without_vat:r.tb, note:r.note||null
+    total_without_vat:m.tb, note:m.note||null
   }]).then(function(res){if(res.error)console.warn('DL save:',res.error.message);});
-  var subj='Dodací list '+r.dlNum+' – '+(_dlOrder.customer_name||'');
-  var body='Dobrý den,\n\npřikládáme dodací list '+r.dlNum+' ze dne '+r.datum+'.\n\nCelkem bez DPH: '+r.tb.toFixed(2)+' Kč\nCelkem s DPH: '+(r.tb*(1+VAT)).toFixed(2)+' Kč\n\nPDF naleznete v příloze.\n\nS pozdravem\nDivoké Farmy';
+  var subj='Dodací list '+m.dlNum+' – '+(_dlOrder.customer_name||'');
+  var body='Dobrý den,\n\npřikládáme dodací list '+m.dlNum+' ze dne '+m.datum+'.\n\nCelkem bez DPH: '+m.tb.toFixed(2)+' Kč\nCelkem s DPH: '+(m.tb*(1+VAT)).toFixed(2)+' Kč\n\nS pozdravem\nDivoké Farmy';
   setTimeout(function(){
     window.location.href='mailto:'+encodeURIComponent(_dlOrder.email)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
-  },500);
+  },800);
 }
 
 var _dodaciListy=[];
@@ -2001,7 +1962,6 @@ _db.from('product_state').select('*').eq('id',1).single().then(function(res){
     try{ var cp=localStorage.getItem('df_cp'); if(cp){ customProds=JSON.parse(cp); customProds.forEach(function(p){ P.push(Object.assign({_custom:true},p)); }); } }catch(e){}
   }
   buildAll();
-  _preloadDLFont();
 });
 
 </script>
