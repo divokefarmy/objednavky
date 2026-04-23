@@ -87,6 +87,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .adm-ef input:focus{border-color:#837261;}
 .adm-prod-save{padding:8px 18px;background:#503f37;color:#DACBBC;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;transition:all .18s;font-family:'Inter',sans-serif;letter-spacing:.03em;}
 .adm-prod-save:hover{background:#1e1e1e;}
+.adm-vahy-row{grid-column:1/-1;}
+.adm-vahy-label{display:flex!important;align-items:center;gap:8px;cursor:pointer;font-size:12px!important;text-transform:none!important;letter-spacing:0!important;color:#503f37!important;font-weight:700!important;}
+.adm-vahy-label input[type=checkbox]{width:auto;margin:0;}
 .tgl{position:relative;width:44px;height:26px;flex-shrink:0;}
 .tgl input{opacity:0;width:0;height:0;position:absolute;}
 .tsl{position:absolute;inset:0;background:#222;border-radius:13px;cursor:pointer;transition:background .25s;border:1px solid rgba(255,255,255,0.06);}
@@ -332,6 +335,7 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
 .prod-card-meta{font-size:11px;color:#837261;font-weight:600;display:flex;flex-wrap:wrap;gap:4px 10px;margin-bottom:2px;}
 .prod-card-price{font-size:21px;font-weight:800;color:#503f37;margin-top:auto;padding-top:6px;}
 .prod-price-per{font-size:12px;font-weight:600;color:#837261;}
+.vahy-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(80,120,60,0.12);color:#4a7a30;border:1px solid rgba(80,120,60,0.2);margin-left:7px;vertical-align:middle;}
 .prod-card-qty-row{display:flex;align-items:center;gap:6px;}
 .prod-card-total{font-size:12px;font-weight:800;color:#503f37;text-align:right;min-height:15px;}
 /* ── Floating bar ── */
@@ -735,62 +739,62 @@ const EJS_SERVICE  = 'service_1wcj7kx';
 const EJS_TEMPLATE = 'template_sjyu0c9';
 emailjs.init({ publicKey: EJS_KEY });
 const P = [
-  {"cat":"Paštiky a pomazánky","name":"Foie gras paštika","baleni":"120 g","sklad":"lednice","trv":"4 měsíce","voc":92,"ok":false},
-  {"cat":"Paštiky a pomazánky","name":"Foie gras s brusinkami","baleni":"120 g","sklad":"lednice","trv":"4 měsíce","voc":103,"ok":false},
-  {"cat":"Paštiky a pomazánky","name":"Foie gras se zeleným pepřem","baleni":"120 g","sklad":"lednice","trv":"4 měsíce","voc":103,"ok":false},
-  {"cat":"Paštiky a pomazánky","name":"Hrubá vepřová paštika","baleni":"170 g","sklad":"lednice","trv":"4 měsíce","voc":63,"ok":false},
-  {"cat":"Paštiky a pomazánky","name":"Husí paštika","baleni":"170 g","sklad":"lednice","trv":"4 měsíce","voc":75,"ok":true},
-  {"cat":"Paštiky a pomazánky","name":"Jemná vepřová paštika","baleni":"170 g","sklad":"lednice","trv":"4 měsíce","voc":63,"ok":true},
-  {"cat":"Paštiky a pomazánky","name":"Kachní játrová paštika","baleni":"170 g","sklad":"lednice","trv":"4 měsíce","voc":75,"ok":true},
-  {"cat":"Paštiky a pomazánky","name":"Polohrubá z divočáka","baleni":"170 g","sklad":"lednice","trv":"4 měsíce","voc":69,"ok":true},
-  {"cat":"Paštiky a pomazánky","name":"Slaninový džem","baleni":"120 g","sklad":"lednice","trv":"4 měsíce","voc":63,"ok":false},
-  {"cat":"Paštiky a pomazánky","name":"Pikantní topinková směs","baleni":"170 g","sklad":"lednice","trv":"4 měsíce","voc":51,"ok":false},
-  {"cat":"Paštiky a pomazánky","name":"Zvěřinová paštika","baleni":"170 g","sklad":"lednice","trv":"4 měsíce","voc":69,"ok":false},
-  {"cat":"Vývary","name":"Hovězí vývar","baleni":"165 ml","sklad":"lednice","trv":"4 měsíce","voc":30,"ok":true},
-  {"cat":"Vývary","name":"Vepřový vývar","baleni":"165 ml","sklad":"lednice","trv":"4 měsíce","voc":30,"ok":true},
-  {"cat":"Vývary","name":"Drůbeží vývar","baleni":"165 ml","sklad":"lednice","trv":"4 měsíce","voc":30,"ok":true},
-  {"cat":"Konzervy","name":"Zabijačkový guláš","baleni":"545 ml","sklad":"do 25°C","trv":"4 měsíce","voc":81,"ok":false},
-  {"cat":"Konzervy","name":"Zabijačková polévka prdelačka","baleni":"545 ml","sklad":"do 25°C","trv":"4 měsíce","voc":57,"ok":true},
-  {"cat":"Konzervy","name":"Zabijačková polévka ovarová","baleni":"545 ml","sklad":"do 25°C","trv":"4 měsíce","voc":57,"ok":false},
-  {"cat":"Konzervy","name":"Vranovská vepřovka","baleni":"","sklad":"","trv":"4 měsíce","voc":91,"ok":true},
-  {"cat":"Konzervy","name":"Pečený bok na medu a cibulce","baleni":"400 g","sklad":"","trv":"4 měsíce","voc":81,"ok":false},
-  {"cat":"Konzervy","name":"Vepřové koleno ve vlastní šťávě","baleni":"280 g","sklad":"","trv":"4 měsíce","voc":81,"ok":false},
-  {"cat":"Konzervy","name":"Pečené koleno v bylinkách","baleni":"280 g","sklad":"","trv":"4 měsíce","voc":81,"ok":false},
-  {"cat":"Konzervy","name":"Dršťková polévka","baleni":"545 ml","sklad":"do 25°C","trv":"4 měsíce","voc":81,"ok":false},
-  {"cat":"Konzervy","name":"Husí játra v sádle","baleni":"","sklad":"","trv":"4 měsíce","voc":92,"ok":false},
-  {"cat":"Utopenci a nakládané","name":"Utopený švec","baleni":"130 g","sklad":"lednice","trv":"4 měsíce","voc":63,"ok":false},
-  {"cat":"Utopenci a nakládané","name":"Pikantní utopenec v pivu","baleni":"130 g","sklad":"lednice","trv":"4 měsíce","voc":63,"ok":true},
-  {"cat":"Utopenci a nakládané","name":"Utopenec klasik","baleni":"130 g","sklad":"lednice","trv":"4 měsíce","voc":63,"ok":false},
-  {"cat":"Utopenci a nakládané","name":"Zavařené křepelčí vejce","baleni":"365 ml","sklad":"lednice","trv":"4 měsíce","voc":87,"ok":false},
-  {"cat":"Klobásy a salámy","name":"Klobása z divočáka – zelený pepř","baleni":"120 g","sklad":"do 18°C","trv":"4 měsíce","voc":50,"ok":false},
-  {"cat":"Klobásy a salámy","name":"Klobása z Gruntu – 1 kus","baleni":"100 g","sklad":"do 18°C","trv":"4 měsíce","voc":31,"ok":true},
-  {"cat":"Klobásy a salámy","name":"Klobása z Gruntu – pár","baleni":"200 g","sklad":"do 18°C","trv":"4 měsíce","voc":62,"ok":true},
-  {"cat":"Klobásy a salámy","name":"Maďarka","baleni":"120 g","sklad":"do 18°C","trv":"4 měsíce","voc":50,"ok":false},
-  {"cat":"Klobásy a salámy","name":"Klobása Pikoška – 1 kus","baleni":"100 g","sklad":"do 18°C","trv":"4 měsíce","voc":31,"ok":true},
-  {"cat":"Klobásy a salámy","name":"Klobása Pikoška – pár","baleni":"200 g","sklad":"do 18°C","trv":"4 měsíce","voc":62,"ok":true},
-  {"cat":"Klobásy a salámy","name":"Podkova s goudou","baleni":"130 g","sklad":"do 18°C","trv":"4 měsíce","voc":55,"ok":true},
-  {"cat":"Klobásy a salámy","name":"S jamajským rumem a brusinkami","baleni":"120 g","sklad":"do 18°C","trv":"4 měsíce","voc":50,"ok":true},
-  {"cat":"Klobásy a salámy","name":"S vlašskými ořechy","baleni":"120 g","sklad":"do 18°C","trv":"4 měsíce","voc":50,"ok":true},
-  {"cat":"Klobásy a salámy","name":"Španělka","baleni":"130 g","sklad":"do 18°C","trv":"4 měsíce","voc":55,"ok":true},
-  {"cat":"Klobásy a salámy","name":"Jelení huhuchilli","baleni":"115 g","sklad":"do 18°C","trv":"4 měsíce","voc":68,"ok":true},
-  {"cat":"Klobásy a salámy","name":"Hovězí japaleno cheddar","baleni":"120 g","sklad":"do 18°C","trv":"4 měsíce","voc":68,"ok":false},
-  {"cat":"Klobásy a salámy","name":"Skopová sušená klobása","baleni":"120 g","sklad":"do 18°C","trv":"4 měsíce","voc":50,"ok":false},
-  {"cat":"Klobásy a salámy","name":"Kabanosky hovězí","baleni":"","sklad":"do 18°C","trv":"4 měsíce","voc":87,"ok":false},
-  {"cat":"Párky a uzeniny","name":"Farmářská klobása","baleni":"270–300 g","sklad":"lednice","trv":"21 dní","voc":66,"ok":false},
-  {"cat":"Párky a uzeniny","name":"Klobása s medvědím česnekem","baleni":"","sklad":"lednice","trv":"21 dní","voc":0,"ok":false},
-  {"cat":"Párky a uzeniny","name":"Klobása s nivou","baleni":"","sklad":"lednice","trv":"21 dní","voc":0,"ok":false},
-  {"cat":"Párky a uzeniny","name":"Špekáček 2 kusy","baleni":"230–250 g","sklad":"lednice","trv":"21 dní","voc":38,"ok":true},
-  {"cat":"Párky a uzeniny","name":"Špekáček 4 kusy","baleni":"","sklad":"lednice","trv":"21 dní","voc":76,"ok":true},
-  {"cat":"Ostatní","name":"Medová šunka","baleni":"100 g","sklad":"lednice","trv":"7 dní","voc":23,"ok":true},
-  {"cat":"Ostatní","name":"Sádlo malé","baleni":"600 ml","sklad":"lednice","trv":"4 měsíce","voc":63,"ok":true},
-  {"cat":"Ostatní","name":"Sekaná česnek","baleni":"500 g","sklad":"lednice","trv":"14 dní","voc":91,"ok":true},
-  {"cat":"Ostatní","name":"Škvarková pomazánka","baleni":"200 g","sklad":"lednice","trv":"4 měsíce","voc":34,"ok":true},
-  {"cat":"Ostatní","name":"Vepřové škvarky v kyblíku","baleni":"200 g","sklad":"lednice","trv":"14 dní","voc":0,"ok":true},
-  {"cat":"Ostatní","name":"Tlačenka","baleni":"400–500 g","sklad":"lednice","trv":"10 dní","voc":75,"ok":true},
-  {"cat":"Ostatní","name":"Kachní chipsy","baleni":"40 g","sklad":"do 25°C","trv":"4 měsíce","voc":57,"ok":true},
-  {"cat":"Špeky","name":"Špek farmářský","baleni":"200 g","sklad":"lednice","trv":"3 měsíce","voc":40,"ok":true},
-  {"cat":"Špeky","name":"Paprikový špek","baleni":"200 g","sklad":"lednice","trv":"3 měsíce","voc":40,"ok":true},
-  {"cat":"Špeky","name":"Zauzený špek","baleni":"200 g","sklad":"lednice","trv":"3 měsíce","voc":43,"ok":true}
+  {"cat":"Paštiky a pomazánky","name":"Foie gras paštika","baleni":"120 g","sklad":"lednice","trv":"4 měsíce","voc":92,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Paštiky a pomazánky","name":"Foie gras s brusinkami","baleni":"120 g","sklad":"lednice","trv":"4 měsíce","voc":103,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Paštiky a pomazánky","name":"Foie gras se zeleným pepřem","baleni":"120 g","sklad":"lednice","trv":"4 měsíce","voc":103,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Paštiky a pomazánky","name":"Hrubá vepřová paštika","baleni":"170 g","sklad":"lednice","trv":"4 měsíce","voc":63,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Paštiky a pomazánky","name":"Husí paštika","baleni":"170 g","sklad":"lednice","trv":"4 měsíce","voc":75,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Paštiky a pomazánky","name":"Jemná vepřová paštika","baleni":"170 g","sklad":"lednice","trv":"4 měsíce","voc":63,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Paštiky a pomazánky","name":"Kachní játrová paštika","baleni":"170 g","sklad":"lednice","trv":"4 měsíce","voc":75,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Paštiky a pomazánky","name":"Polohrubá z divočáka","baleni":"170 g","sklad":"lednice","trv":"4 měsíce","voc":69,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Paštiky a pomazánky","name":"Slaninový džem","baleni":"120 g","sklad":"lednice","trv":"4 měsíce","voc":63,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Paštiky a pomazánky","name":"Pikantní topinková směs","baleni":"170 g","sklad":"lednice","trv":"4 měsíce","voc":51,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Paštiky a pomazánky","name":"Zvěřinová paštika","baleni":"170 g","sklad":"lednice","trv":"4 měsíce","voc":69,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Vývary","name":"Hovězí vývar","baleni":"165 ml","sklad":"lednice","trv":"4 měsíce","voc":30,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Vývary","name":"Vepřový vývar","baleni":"165 ml","sklad":"lednice","trv":"4 měsíce","voc":30,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Vývary","name":"Drůbeží vývar","baleni":"165 ml","sklad":"lednice","trv":"4 měsíce","voc":30,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Konzervy","name":"Zabijačkový guláš","baleni":"545 ml","sklad":"do 25°C","trv":"4 měsíce","voc":81,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Konzervy","name":"Zabijačková polévka prdelačka","baleni":"545 ml","sklad":"do 25°C","trv":"4 měsíce","voc":57,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Konzervy","name":"Zabijačková polévka ovarová","baleni":"545 ml","sklad":"do 25°C","trv":"4 měsíce","voc":57,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Konzervy","name":"Vranovská vepřovka","baleni":"","sklad":"","trv":"4 měsíce","voc":91,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Konzervy","name":"Pečený bok na medu a cibulce","baleni":"400 g","sklad":"","trv":"4 měsíce","voc":81,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Konzervy","name":"Vepřové koleno ve vlastní šťávě","baleni":"280 g","sklad":"","trv":"4 měsíce","voc":81,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Konzervy","name":"Pečené koleno v bylinkách","baleni":"280 g","sklad":"","trv":"4 měsíce","voc":81,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Konzervy","name":"Dršťková polévka","baleni":"545 ml","sklad":"do 25°C","trv":"4 měsíce","voc":81,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Konzervy","name":"Husí játra v sádle","baleni":"","sklad":"","trv":"4 měsíce","voc":92,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Utopenci a nakládané","name":"Utopený švec","baleni":"130 g","sklad":"lednice","trv":"4 měsíce","voc":63,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Utopenci a nakládané","name":"Pikantní utopenec v pivu","baleni":"130 g","sklad":"lednice","trv":"4 měsíce","voc":63,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Utopenci a nakládané","name":"Utopenec klasik","baleni":"130 g","sklad":"lednice","trv":"4 měsíce","voc":63,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Utopenci a nakládané","name":"Zavařené křepelčí vejce","baleni":"365 ml","sklad":"lednice","trv":"4 měsíce","voc":87,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Klobásy a salámy","name":"Klobása z divočáka – zelený pepř","baleni":"120 g","sklad":"do 18°C","trv":"4 měsíce","voc":50,"ok":false,"vahy":true,"voc_kg":423.19},
+  {"cat":"Klobásy a salámy","name":"Klobása z Gruntu – 1 kus","baleni":"100 g","sklad":"do 18°C","trv":"4 měsíce","voc":31,"ok":true,"vahy":true,"voc_kg":307.25},
+  {"cat":"Klobásy a salámy","name":"Klobása z Gruntu – pár","baleni":"200 g","sklad":"do 18°C","trv":"4 měsíce","voc":62,"ok":true,"vahy":true,"voc_kg":307.25},
+  {"cat":"Klobásy a salámy","name":"Maďarka","baleni":"120 g","sklad":"do 18°C","trv":"4 měsíce","voc":50,"ok":false,"vahy":true,"voc_kg":423.19},
+  {"cat":"Klobásy a salámy","name":"Klobása Pikoška – 1 kus","baleni":"100 g","sklad":"do 18°C","trv":"4 měsíce","voc":31,"ok":true,"vahy":true,"voc_kg":307.25},
+  {"cat":"Klobásy a salámy","name":"Klobása Pikoška – pár","baleni":"200 g","sklad":"do 18°C","trv":"4 měsíce","voc":62,"ok":true,"vahy":true,"voc_kg":307.25},
+  {"cat":"Klobásy a salámy","name":"Podkova s goudou","baleni":"130 g","sklad":"do 18°C","trv":"4 měsíce","voc":55,"ok":true,"vahy":true,"voc_kg":423.19},
+  {"cat":"Klobásy a salámy","name":"S jamajským rumem a brusinkami","baleni":"120 g","sklad":"do 18°C","trv":"4 měsíce","voc":50,"ok":true,"vahy":true,"voc_kg":423.19},
+  {"cat":"Klobásy a salámy","name":"S vlašskými ořechy","baleni":"120 g","sklad":"do 18°C","trv":"4 měsíce","voc":50,"ok":true,"vahy":true,"voc_kg":423.19},
+  {"cat":"Klobásy a salámy","name":"Španělka","baleni":"130 g","sklad":"do 18°C","trv":"4 měsíce","voc":55,"ok":true,"vahy":true,"voc_kg":423.19},
+  {"cat":"Klobásy a salámy","name":"Jelení huhuchilli","baleni":"115 g","sklad":"do 18°C","trv":"4 měsíce","voc":68,"ok":true,"vahy":true,"voc_kg":568.12},
+  {"cat":"Klobásy a salámy","name":"Hovězí japaleno cheddar","baleni":"120 g","sklad":"do 18°C","trv":"4 měsíce","voc":68,"ok":false,"vahy":true,"voc_kg":568.12},
+  {"cat":"Klobásy a salámy","name":"Skopová sušená klobása","baleni":"120 g","sklad":"do 18°C","trv":"4 měsíce","voc":50,"ok":false,"vahy":true,"voc_kg":423.19},
+  {"cat":"Klobásy a salámy","name":"Kabanosky hovězí","baleni":"","sklad":"do 18°C","trv":"4 měsíce","voc":87,"ok":false,"vahy":false,"voc_kg":0},
+  {"cat":"Párky a uzeniny","name":"Farmářská klobása","baleni":"270–300 g","sklad":"lednice","trv":"21 dní","voc":66,"ok":false,"vahy":true,"voc_kg":220.29},
+  {"cat":"Párky a uzeniny","name":"Klobása s medvědím česnekem","baleni":"","sklad":"lednice","trv":"21 dní","voc":0,"ok":false,"vahy":true,"voc_kg":220.29},
+  {"cat":"Párky a uzeniny","name":"Klobása s nivou","baleni":"","sklad":"lednice","trv":"21 dní","voc":0,"ok":false,"vahy":true,"voc_kg":220.29},
+  {"cat":"Párky a uzeniny","name":"Špekáček 2 kusy","baleni":"230–250 g","sklad":"lednice","trv":"21 dní","voc":38,"ok":true,"vahy":true,"voc_kg":150},
+  {"cat":"Párky a uzeniny","name":"Špekáček 4 kusy","baleni":"","sklad":"lednice","trv":"21 dní","voc":76,"ok":true,"vahy":true,"voc_kg":150},
+  {"cat":"Ostatní","name":"Medová šunka","baleni":"100 g","sklad":"lednice","trv":"7 dní","voc":23,"ok":true,"vahy":true,"voc_kg":231.30},
+  {"cat":"Ostatní","name":"Sádlo malé","baleni":"600 ml","sklad":"lednice","trv":"4 měsíce","voc":63,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Ostatní","name":"Sekaná česnek","baleni":"500 g","sklad":"lednice","trv":"14 dní","voc":91,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Ostatní","name":"Škvarková pomazánka","baleni":"200 g","sklad":"lednice","trv":"4 měsíce","voc":34,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Ostatní","name":"Vepřové škvarky v kyblíku","baleni":"200 g","sklad":"lednice","trv":"14 dní","voc":0,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Ostatní","name":"Tlačenka","baleni":"400–500 g","sklad":"lednice","trv":"10 dní","voc":75,"ok":true,"vahy":true,"voc_kg":150},
+  {"cat":"Ostatní","name":"Kachní chipsy","baleni":"40 g","sklad":"do 25°C","trv":"4 měsíce","voc":57,"ok":true,"vahy":false,"voc_kg":0},
+  {"cat":"Špeky","name":"Špek farmářský","baleni":"200 g","sklad":"lednice","trv":"3 měsíce","voc":40,"ok":true,"vahy":true,"voc_kg":200},
+  {"cat":"Špeky","name":"Paprikový špek","baleni":"200 g","sklad":"lednice","trv":"3 měsíce","voc":40,"ok":true,"vahy":true,"voc_kg":200},
+  {"cat":"Špeky","name":"Zauzený špek","baleni":"200 g","sklad":"lednice","trv":"3 měsíce","voc":43,"ok":true,"vahy":true,"voc_kg":215}
 ];
 // ── state ──
 let avail = {};
@@ -847,7 +851,7 @@ function buildAll(){
           +(ok?'':'<span class="prod-na-badge">Nedostupné</span>')
         +'</div>'
         +(meta?'<div class="prod-card-meta">'+meta+'</div>':'')
-        +'<div class="prod-card-price">'+p.voc+' Kč<span class="prod-price-per"> / ks</span></div>'
+        +(p.vahy?'<div class="prod-card-price">'+p.voc_kg+' Kč<span class="prod-price-per"> / kg</span><span class="vahy-badge">dle váhy</span></div>':'<div class="prod-card-price">'+p.voc+' Kč<span class="prod-price-per"> / ks</span></div>')
         +(ok?'<div class="prod-card-qty-row"><button class="qty-btn" onclick="changeQty('+p.idx+',-1)">−</button><input class="qty-inp" type="number" min="0" step="1" value="0" id="q'+p.idx+'" oninput="recalc()"><button class="qty-btn" onclick="changeQty('+p.idx+',1)">+</button></div>':'')
         +'<div class="prod-card-total" id="l'+p.idx+'"></div>'
         +'</div>';
@@ -1394,10 +1398,12 @@ function renderAdmin(q){
         +'<div class="adm-edit" id="admedit'+i+'">'
           +'<div class="adm-edit-grid">'
             +'<div class="adm-ef full"><label>Název produktu</label><input id="adn'+i+'" value="'+esc(p.name)+'"></div>'
-            +'<div class="adm-ef"><label>VOC cena (Kč bez DPH)</label><input type="number" id="adv'+i+'" value="'+p.voc+'"></div>'
+            +'<div class="adm-ef"><label>VOC cena za kus (Kč bez DPH)</label><input type="number" id="adv'+i+'" value="'+p.voc+'"></div>'
             +'<div class="adm-ef"><label>Balení / Objem</label><input id="adb'+i+'" value="'+esc(p.baleni)+'"></div>'
             +'<div class="adm-ef"><label>Skladování</label><input id="ads'+i+'" value="'+esc(p.sklad)+'"></div>'
             +'<div class="adm-ef"><label>Trvanlivost</label><input id="adt'+i+'" value="'+esc(p.trv)+'"></div>'
+            +'<div class="adm-ef adm-vahy-row"><label class="adm-vahy-label"><input type="checkbox" id="advahy'+i+'" '+(p.vahy?'checked':'')+' onchange="toggleVahyKg('+i+',this.checked)"> Vážený produkt (fakturace dle kg)</label></div>'
+            +'<div class="adm-ef" style="'+(p.vahy?'':'display:none')+'" id="advefdlkg'+i+'"><label>VOC cena za kg (Kč/kg bez DPH)</label><input type="number" id="advkg'+i+'" value="'+(p.voc_kg||0)+'"></div>'
           +'</div>'
           +'<button class="adm-prod-save" onclick="saveProd('+i+')">Uložit změny</button>'
         +'</div>'
@@ -1421,14 +1427,21 @@ function toggleEdit(i){
   btn.textContent=open?'✎ Upravit':'✕ Zavřít';
   row.style.borderRadius=open?'12px':'12px 12px 0 0';
 }
+function toggleVahyKg(i, checked){
+  var el=document.getElementById('advefdlkg'+i);
+  if(el) el.style.display=checked?'':'none';
+}
 function saveProd(i){
   var name=document.getElementById('adn'+i).value.trim()||P[i].name;
   var voc=parseFloat(document.getElementById('adv'+i).value)||P[i].voc;
   var baleni=document.getElementById('adb'+i).value.trim();
   var sklad=document.getElementById('ads'+i).value.trim();
   var trv=document.getElementById('adt'+i).value.trim();
-  P[i].name=name;P[i].voc=voc;P[i].baleni=baleni;P[i].sklad=sklad;P[i].trv=trv;
-  prodOverrides[i]={name:name,voc:voc,baleni:baleni,sklad:sklad,trv:trv};
+  var vahyEl=document.getElementById('advahy'+i);
+  var vahy=vahyEl?vahyEl.checked:P[i].vahy;
+  var voc_kg=parseFloat(document.getElementById('advkg'+i).value)||0;
+  P[i].name=name;P[i].voc=voc;P[i].baleni=baleni;P[i].sklad=sklad;P[i].trv=trv;P[i].vahy=vahy;P[i].voc_kg=voc_kg;
+  prodOverrides[i]={name:name,voc:voc,baleni:baleni,sklad:sklad,trv:trv,vahy:vahy,voc_kg:voc_kg};
   var pn=document.getElementById('admpn'+i);if(pn)pn.textContent=name;
   var bl=document.getElementById('admbl'+i);if(bl)bl.textContent=baleni;
   toggleEdit(i);
@@ -1576,7 +1589,12 @@ var _dlItems=[], _dlOrder=null;
 
 function openDodaciList(idx){
   _dlOrder=_orders[idx];
-  _dlItems=(_dlOrder.items||[]).map(function(it){return Object.assign({},it);});
+  _dlItems=(_dlOrder.items||[]).map(function(it){
+    var match=P.find(function(p){return p.name===it.name;});
+    var vahy=match?match.vahy:false;
+    var voc_kg=match?match.voc_kg:0;
+    return Object.assign({},it,{vahy:vahy,voc_kg:voc_kg,vahy_kg:0});
+  });
   document.getElementById('dl-cust').textContent=_dlOrder.customer_name+(_dlOrder.company?' / '+_dlOrder.company:'');
   document.getElementById('dl-email').textContent=_dlOrder.email+(_dlOrder.phone?' · '+_dlOrder.phone:'');
   document.getElementById('dl-note').value='';
@@ -1588,14 +1606,20 @@ function closeDodaciList(){ document.getElementById('dl-ov').style.display='none
 function _he(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
 
 function renderDLItems(){
-  var html='<table class="dl-items-tbl"><thead><tr><th>Produkt</th><th>Objem</th><th style="text-align:center">Ks</th><th style="text-align:right">Cena/ks</th><th style="text-align:right">Celkem</th><th></th></tr></thead><tbody>';
+  var html='<table class="dl-items-tbl"><thead><tr><th>Produkt</th><th>Objem</th><th style="text-align:center">Ks</th><th style="text-align:center">Váha (kg)</th><th style="text-align:right">Cena/jedn.</th><th style="text-align:right">Celkem</th><th></th></tr></thead><tbody>';
   _dlItems.forEach(function(it,i){
-    var tot=((it.qty||0)*(it.voc||0));
+    var tot=it.vahy ? (it.vahy_kg||0)*(it.voc_kg||0) : (it.qty||0)*(it.voc||0);
     html+='<tr>'
-      +'<td><input class="dl-inp" value="'+_he(it.name)+'" oninput="_dlItems['+i+'].name=this.value"></td>'
+      +'<td><input class="dl-inp" value="'+_he(it.name)+'" oninput="_dlItems['+i+'].name=this.value">'
+        +(it.vahy?'<span class="vahy-badge" style="margin-left:6px;font-size:9px">dle kg</span>':'')+'</td>'
       +'<td><input class="dl-inp" value="'+_he(it.baleni||'')+'" oninput="_dlItems['+i+'].baleni=this.value" style="width:72px"></td>'
       +'<td style="text-align:center"><input class="dl-qty" type="number" min="0" value="'+(it.qty||0)+'" oninput="_dlItems['+i+'].qty=parseInt(this.value)||0;recalcDL()"></td>'
-      +'<td><input class="dl-price" type="number" min="0" value="'+(it.voc||0)+'" oninput="_dlItems['+i+'].voc=parseFloat(this.value)||0;recalcDL()"></td>'
+      +'<td style="text-align:center">'+(it.vahy
+        ? '<input class="dl-qty" type="number" min="0" step="0.01" value="'+(it.vahy_kg||0)+'" oninput="_dlItems['+i+'].vahy_kg=parseFloat(this.value)||0;recalcDL()" style="width:70px">'
+        : '<span style="color:#ccc;font-size:12px">—</span>')+'</td>'
+      +'<td style="text-align:right">'+(it.vahy
+        ? '<input class="dl-price" type="number" min="0" value="'+(it.voc_kg||0)+'" oninput="_dlItems['+i+'].voc_kg=parseFloat(this.value)||0;recalcDL()"> Kč/kg'
+        : '<input class="dl-price" type="number" min="0" value="'+(it.voc||0)+'" oninput="_dlItems['+i+'].voc=parseFloat(this.value)||0;recalcDL()"> Kč/ks')+'</td>'
       +'<td style="text-align:right;font-weight:800;color:#503f37;white-space:nowrap" id="dlr'+i+'">'+tot.toFixed(2)+' Kč</td>'
       +'<td><button class="dl-del" onclick="removeDLItem('+i+')">✕</button></td>'
       +'</tr>';
@@ -1608,7 +1632,7 @@ function renderDLItems(){
 function recalcDL(){
   var total=0;
   _dlItems.forEach(function(it,i){
-    var val=(it.qty||0)*(it.voc||0); total+=val;
+    var val=it.vahy ? (it.vahy_kg||0)*(it.voc_kg||0) : (it.qty||0)*(it.voc||0); total+=val;
     var el=document.getElementById('dlr'+i); if(el) el.textContent=val.toFixed(2)+' Kč';
   });
   document.getElementById('dl-total-val').textContent=fmt(total);
@@ -1620,7 +1644,7 @@ function addDLItem(){
   var n=document.getElementById('dl-new-name').value.trim();
   var v=parseFloat(document.getElementById('dl-new-voc').value)||0;
   if(!n){ alert('Zadejte název položky.'); return; }
-  _dlItems.push({name:n,baleni:'',qty:1,voc:v,total:v});
+  _dlItems.push({name:n,baleni:'',qty:1,voc:v,total:v,vahy:false,voc_kg:0,vahy_kg:0});
   document.getElementById('dl-new-name').value='';
   document.getElementById('dl-new-voc').value='';
   renderDLItems();
@@ -1628,7 +1652,7 @@ function addDLItem(){
 
 function _buildDLPDF(){
   if(!_dlOrder||!_dlItems.length) return null;
-  var tb=_dlItems.reduce(function(s,it){return s+(it.qty||0)*(it.voc||0);},0);
+  var tb=_dlItems.reduce(function(s,it){return s+(it.vahy?(it.vahy_kg||0)*(it.voc_kg||0):(it.qty||0)*(it.voc||0));},0);
   var datum=new Date().toLocaleDateString('cs-CZ');
   var dlNum='DL-'+new Date().toISOString().slice(0,10).replace(/-/g,'');
   var note=document.getElementById('dl-note').value.trim();
@@ -1652,12 +1676,22 @@ function _buildDLPDF(){
   if(_dlOrder.address) info.push(_dlOrder.address);
   info.forEach(function(l){doc.text(l,14,y);y+=5;}); y+=4;
   doc.autoTable({startY:y,
-    head:[['Produkt','Objem','Mnozstvi','Cena/ks','Celkem']],
-    body:_dlItems.map(function(it){return[it.name,it.baleni||'—',(it.qty||0)+' ks',(it.voc||0)+' Kc',((it.qty||0)*(it.voc||0)).toFixed(2)+' Kc'];}),
+    head:[['Produkt','Objem','Ks','Vaha (kg)','Cena/jedn.','Celkem']],
+    body:_dlItems.map(function(it){
+      var tot=it.vahy?(it.vahy_kg||0)*(it.voc_kg||0):(it.qty||0)*(it.voc||0);
+      return[
+        it.name+(it.vahy?' [kg]':''),
+        it.baleni||'—',
+        (it.qty||0)+' ks',
+        it.vahy?(it.vahy_kg||0).toFixed(3)+' kg':'—',
+        it.vahy?(it.voc_kg||0)+' Kc/kg':(it.voc||0)+' Kc/ks',
+        tot.toFixed(2)+' Kc'
+      ];
+    }),
     headStyles:{fillColor:[80,63,55],textColor:[220,203,188],fontStyle:'bold',fontSize:8},
     bodyStyles:{fontSize:8,textColor:[30,30,30]},
     alternateRowStyles:{fillColor:[240,235,228]},
-    columnStyles:{2:{halign:'center'},3:{halign:'right'},4:{halign:'right',fontStyle:'bold'}},
+    columnStyles:{2:{halign:'center'},3:{halign:'center'},4:{halign:'right'},5:{halign:'right',fontStyle:'bold'}},
     margin:{left:14,right:14},styles:{lineColor:[200,188,175],lineWidth:0.2}
   });
   var fy=doc.lastAutoTable.finalY+6;
