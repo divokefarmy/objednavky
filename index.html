@@ -1669,7 +1669,18 @@ function openNovyDodaciList(){
   _openDLOverlay();
 }
 
-function closeDodaciList(){ document.getElementById('dl-ov').style.display='none'; _dlItems=[]; _dlOrder=null; }
+function closeDodaciList(){
+  if(_dlItems.length>0){
+    if(confirm('Chcete dodací list uložit před zavřením?')){
+      ulozitDL();
+      setTimeout(function(){
+        document.getElementById('dl-ov').style.display='none'; _dlItems=[]; _dlOrder=null;
+      },800);
+      return;
+    }
+  }
+  document.getElementById('dl-ov').style.display='none'; _dlItems=[]; _dlOrder=null;
+}
 
 function _he(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
 
