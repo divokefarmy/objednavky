@@ -571,6 +571,7 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
     <div class="dl-actions">
       <button class="dl-send-btn" onclick="odeslatDL()">Stáhnout PDF + Odeslat emailem →</button>
       <button class="dl-pdf-btn" onclick="stahnoutDL()">Jen PDF</button>
+      <button class="dl-pdf-btn" id="dl-save-btn" onclick="ulozitDL()" style="background:#4a7a30;color:#fff;">💾 Uložit</button>
     </div>
   </div>
 </div>
@@ -1816,6 +1817,29 @@ function odeslatDL(){
   setTimeout(function(){
     window.location.href='mailto:'+encodeURIComponent(m.cust.email)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
   },800);
+}
+
+function ulozitDL(){
+  if(!_dlItems.length){alert('Žádné položky.');return;}
+  var m=_getDLMeta();
+  if(!m.cust.name){alert('Zadejte prosím jméno zákazníka.');return;}
+  var btn=document.getElementById('dl-save-btn');
+  if(btn){btn.disabled=true;btn.textContent='Ukládám…';}
+  _db.from('delivery_notes').insert([{
+    order_id:_dlOrder?_dlOrder.id:null,
+    customer_name:m.cust.name,
+    customer_email:m.cust.email||null,
+    company:m.cust.company||null,
+    phone:m.cust.phone||null,
+    items:_dlItems.map(function(it){return{name:it.name,baleni:it.baleni||'',qty:it.qty||0,voc:it.voc||0,total:(it.qty||0)*(it.voc||0)};}),
+    total_without_vat:m.tb, note:m.note||null
+  }]).then(function(res){
+    if(btn){btn.disabled=false;btn.textContent='💾 Uložit';}
+    if(res.error){alert('Chyba při ukládání: '+res.error.message);return;}
+    btn.textContent='✓ Uloženo';
+    btn.style.background='#2d5a1b';
+    setTimeout(function(){if(btn){btn.textContent='💾 Uložit';btn.style.background='#4a7a30';}},2500);
+  });
 }
 
 var _dodaciListy=[];
