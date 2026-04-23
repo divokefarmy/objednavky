@@ -1607,7 +1607,7 @@ function generatePDF(){
 }
 
 // ── Dodací listy ──
-var _dlItems=[], _dlOrder=null;
+var _dlItems=[], _dlOrder=null, _dlEditId=null;
 
 function _fillDLKatalog(){
   var sel=document.getElementById('dl-kat-sel');
@@ -1660,13 +1660,34 @@ function openDodaciList(idx){
 }
 
 function openNovyDodaciList(){
-  _dlOrder=null;
+  _dlOrder=null; _dlEditId=null;
   _dlItems=[];
   document.getElementById('dl-f-name').value='';
   document.getElementById('dl-f-company').value='';
   document.getElementById('dl-f-email').value='';
   document.getElementById('dl-f-phone').value='';
   _openDLOverlay();
+}
+
+function upravitDL(id, idx){
+  var dl=_dodaciListy[idx];
+  if(!dl) return;
+  _dlEditId=id;
+  _dlOrder=null;
+  _dlItems=(dl.items||[]).map(function(it){
+    var match=P.find(function(p){return p.name===it.name;});
+    return Object.assign({},it,{vahy:match?match.vahy:false,voc_kg:match?match.voc_kg:0,vahy_kg:it.vahy_kg||0});
+  });
+  document.getElementById('dl-f-name').value=dl.customer_name||'';
+  document.getElementById('dl-f-company').value=dl.company||'';
+  document.getElementById('dl-f-email').value=dl.customer_email||'';
+  document.getElementById('dl-f-phone').value=dl.phone||'';
+  document.getElementById('dl-note').value=dl.note||'';
+  var btn=document.getElementById('dl-save-btn');
+  if(btn){btn.textContent='💾 Uložit změny';}
+  _fillDLKatalog();
+  renderDLItems();
+  document.getElementById('dl-ov').style.display='block';
 }
 
 function closeDodaciList(){
@@ -1679,7 +1700,9 @@ function closeDodaciList(){
       return;
     }
   }
-  document.getElementById('dl-ov').style.display='none'; _dlItems=[]; _dlOrder=null;
+  document.getElementById('dl-ov').style.display='none'; _dlItems=[]; _dlOrder=null; _dlEditId=null;
+  var btn=document.getElementById('dl-save-btn');
+  if(btn){btn.textContent='💾 Uložit';btn.style.background='#4a7a30';}
 }
 
 function _he(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
@@ -1764,7 +1787,8 @@ function stahnoutDL(){
   if(m.cust.phone) info+='<div>'+m.cust.phone+'</div>';
   if(_dlOrder&&_dlOrder.address) info+='<div>'+_dlOrder.address+'</div>';
 
-  var html='<!DOCTYPE html><html><head><meta charset="utf-8"><style>'
+  var pdfName='DL_'+m.cust.name.replace(/\s+/g,'_')+'_'+new Date().toISOString().slice(0,10);
+  var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+pdfName+'</title><style>'
     +'*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}'
     +'body{background:#fff;color:#1e1e1e;padding:20mm 14mm;font-size:9pt;}'
     +'.header{background:#503f37;color:#DACBBC;padding:10px 14px;margin:-20mm -14mm 14mm;display:flex;justify-content:space-between;align-items:center;}'
@@ -1836,20 +1860,27 @@ function ulozitDL(){
   if(!m.cust.name){alert('Zadejte prosím jméno zákazníka.');return;}
   var btn=document.getElementById('dl-save-btn');
   if(btn){btn.disabled=true;btn.textContent='Ukládám…';}
-  _db.from('delivery_notes').insert([{
-    order_id:_dlOrder?_dlOrder.id:null,
+  var data={
     customer_name:m.cust.name,
     customer_email:m.cust.email||null,
     company:m.cust.company||null,
     phone:m.cust.phone||null,
-    items:_dlItems.map(function(it){return{name:it.name,baleni:it.baleni||'',qty:it.qty||0,voc:it.voc||0,total:(it.qty||0)*(it.voc||0)};}),
+    items:_dlItems.map(function(it){return{name:it.name,baleni:it.baleni||'',qty:it.qty||0,voc:it.voc||0,vahy:it.vahy||false,voc_kg:it.voc_kg||0,vahy_kg:it.vahy_kg||0,total:(it.vahy?(it.vahy_kg||0)*(it.voc_kg||0):(it.qty||0)*(it.voc||0))};}),
     total_without_vat:m.tb, note:m.note||null
-  }]).then(function(res){
-    if(btn){btn.disabled=false;btn.textContent='💾 Uložit';}
+  };
+  var req;
+  if(_dlEditId){
+    req=_db.from('delivery_notes').update(data).eq('id',_dlEditId);
+  } else {
+    data.order_id=_dlOrder?_dlOrder.id:null;
+    req=_db.from('delivery_notes').insert([data]);
+  }
+  req.then(function(res){
+    if(btn){btn.disabled=false;}
     if(res.error){alert('Chyba při ukládání: '+res.error.message);return;}
     btn.textContent='✓ Uloženo';
     btn.style.background='#2d5a1b';
-    setTimeout(function(){if(btn){btn.textContent='💾 Uložit';btn.style.background='#4a7a30';}},2500);
+    setTimeout(function(){if(btn){btn.textContent=_dlEditId?'💾 Uložit změny':'💾 Uložit';btn.style.background='#4a7a30';}},2500);
   });
 }
 
@@ -1883,6 +1914,7 @@ function renderDodaciListy(){
       +'<div class="order-info">'+(dl.company||'')+(dl.customer_email?' · '+dl.customer_email:'')+'</div>'
       +'<table class="order-items-tbl"><tr><th>Produkt</th><th style="text-align:center">Množství</th><th style="text-align:right">Celkem</th></tr>'+irows+'</table>'
       +'<div class="order-actions">'
+      +'<button class="muted-btn" onclick="upravitDL(\''+dl.id+'\','+idx+')">✎ Upravit</button>'
       +'<button class="muted-btn" onclick="archivujDL(\''+dl.id+'\','+idx+')">'+(isArch?'↩ Obnovit':'📦 Archivovat')+'</button>'
       +'<button class="danger-btn" style="border-color:rgba(100,0,0,0.3);background:rgba(100,0,0,0.07);color:#800" onclick="smazatDL(\''+dl.id+'\','+idx+')">🗑 Smazat</button>'
       +'</div>'
