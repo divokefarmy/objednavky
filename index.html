@@ -615,7 +615,7 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
     <div class="sum-hd">Souhrn objednávky</div>
     <div id="sb"><div class="sum-empty">Zatím nebyl vybrán žádný produkt.</div></div>
     <div class="sum-total"><span class="lbl">Celkem bez DPH</span><span class="val" id="tv">0 Kč</span></div>
-    <div class="sum-sub" id="tsdph" style="margin-top:5px;color:var(--t3);font-size:12px;"></div>
+    <div class="sum-sub" id="tsdph" style="margin-top:5px;color:var(--t3);font-size:14px;justify-content:flex-end;gap:18px;"></div>
   </div>
 
   <div class="field" style="margin-bottom:20px;">
@@ -811,7 +811,9 @@ function recalc(){
   });
   document.getElementById('tv').textContent = fmt(total);
   var dph = total * VAT;
-  document.getElementById('tsdph').textContent = total>0 ? 's DPH (12 %): '+fmt(total*(1+VAT))+'  ·  DPH: '+fmt(dph) : '';
+  document.getElementById('tsdph').innerHTML = total>0
+    ? '<span>DPH 12 %: <strong>'+fmt(dph)+'</strong></span><span>Celkem s DPH: <strong>'+fmt(total*(1+VAT))+'</strong></span>'
+    : '';
   // floating bar
   var fb=document.getElementById('float-bar');
   if(fb){
