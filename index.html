@@ -258,7 +258,7 @@ footer strong{color:var(--t2);font-weight:800;}
 .orders-reload:hover{background:#503f37;color:#DACBBC;}
 /* ── Delivery note modal ── */
 #dl-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:2000;overflow-y:auto;padding:40px 20px 60px;}
-.dl-box{max-width:720px;margin:0 auto;background:#DACBBC;border:1px solid rgba(80,63,55,0.15);border-radius:24px;padding:32px;box-shadow:var(--shadow-gold);}
+.dl-box{max-width:960px;margin:0 auto;background:#DACBBC;border:1px solid rgba(80,63,55,0.15);border-radius:24px;padding:32px;box-shadow:var(--shadow-gold);}
 .dl-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
 .dl-title{font-size:20px;font-weight:800;color:#1e1e1e;}
 .dl-sub{font-size:13px;color:#837261;margin-top:4px;font-weight:600;line-height:1.7;}
@@ -286,6 +286,25 @@ footer strong{color:var(--t2);font-weight:800;}
 .dl-cf input{width:100%;padding:8px 11px;background:#fff;border:1px solid rgba(80,63,55,0.20);border-radius:8px;font-size:13px;font-weight:600;color:#1e1e1e;outline:none;font-family:'Inter',sans-serif;}
 .dl-cf input:focus{border-color:#837261;}
 .dl-add-row select{padding:9px 11px;background:#fff;border:1px solid rgba(80,63,55,0.20);border-radius:10px;font-size:13px;color:#503f37;font-weight:600;outline:none;font-family:'Inter',sans-serif;}
+.dl-catalog{margin-bottom:18px;}
+.dl-catalog-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.dl-catalog-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#837261;}
+.dl-catalog-add-btn{padding:8px 18px;background:#503f37;color:#DACBBC;border:none;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.03em;}
+.dl-catalog-add-btn:hover{background:#1e1e1e;}
+.dl-cat-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.dl-cat-tab{padding:5px 13px;border-radius:20px;border:1px solid rgba(80,63,55,0.25);background:transparent;font-size:11px;font-weight:700;color:#503f37;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;}
+.dl-cat-tab.active{background:#503f37;color:#DACBBC;border-color:#503f37;}
+.dl-prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;}
+.dl-prod-card{background:rgba(255,255,255,0.55);border:1px solid rgba(80,63,55,0.15);border-radius:14px;padding:14px 13px;display:flex;flex-direction:column;gap:6px;}
+.dl-prod-card.unavail{opacity:.4;pointer-events:none;}
+.dl-prod-card-name{font-size:12px;font-weight:800;color:#1e1e1e;line-height:1.3;}
+.dl-prod-card-price{font-size:15px;font-weight:800;color:#503f37;}
+.dl-prod-card-price span{font-size:10px;font-weight:600;color:#837261;}
+.dl-prod-qty-row{display:flex;align-items:center;gap:5px;margin-top:auto;}
+.dl-prod-qty-row button{width:28px;height:28px;border-radius:8px;border:none;background:#503f37;color:#DACBBC;font-size:16px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;}
+.dl-prod-qty-row input{width:40px;text-align:center;border:1px solid rgba(80,63,55,0.25);border-radius:8px;padding:4px;font-size:13px;font-weight:700;background:#fff;color:#1e1e1e;font-family:'Inter',sans-serif;}
+.dl-manual-row{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(80,63,55,0.15);flex-wrap:wrap;}
+.dl-sep{font-size:11px;font-weight:700;color:#837261;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
 .dl-send-btn{flex:2;padding:15px;background:#503f37;color:#DACBBC;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;letter-spacing:.04em;}
 .dl-send-btn:hover{background:#1e1e1e;}
 .dl-pdf-btn{flex:1;padding:15px;background:rgba(80,63,55,0.12);color:#503f37;border:1px solid rgba(80,63,55,0.20);border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;}
@@ -554,14 +573,20 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
       <div class="dl-cf"><label>E-mail</label><input id="dl-f-email" type="email" placeholder="email@firma.cz"></div>
       <div class="dl-cf"><label>Telefon</label><input id="dl-f-phone" placeholder="+420 …"></div>
     </div>
-    <div class="dl-add-row">
-      <select id="dl-kat-sel" onchange="dlProdZKatalogu()" style="flex:1.2">
-        <option value="">— přidat z katalogu —</option>
-      </select>
-      <input id="dl-new-name" placeholder="nebo název ručně…" style="flex:1.5">
-      <input id="dl-new-voc" type="number" placeholder="Kč/ks" style="max-width:90px;flex:none">
-      <button class="dl-add-btn" onclick="addDLItem()">+ Přidat</button>
+    <div class="dl-catalog" id="dl-catalog-section">
+      <div class="dl-catalog-hd">
+        <span class="dl-catalog-title">Vybrat produkty</span>
+        <button class="dl-catalog-add-btn" onclick="dlPridatVybrane()">+ Přidat vybrané do listu</button>
+      </div>
+      <div class="dl-cat-tabs" id="dl-cat-tabs"></div>
+      <div class="dl-prod-grid" id="dl-prod-grid"></div>
+      <div class="dl-manual-row">
+        <input id="dl-new-name" placeholder="Přidat ručně — název…" style="flex:2;padding:8px 11px;background:#fff;border:1px solid rgba(80,63,55,0.20);border-radius:10px;font-size:13px;color:#1e1e1e;font-family:'Inter',sans-serif;outline:none;">
+        <input id="dl-new-voc" type="number" placeholder="Kč/ks" style="width:90px;padding:8px 11px;background:#fff;border:1px solid rgba(80,63,55,0.20);border-radius:10px;font-size:13px;color:#1e1e1e;font-family:'Inter',sans-serif;outline:none;">
+        <button class="dl-add-btn" onclick="addDLItem()">+ Přidat</button>
+      </div>
     </div>
+    <div class="dl-sep">Položky dodacího listu</div>
     <div id="dl-items-wrap"></div>
     <div class="dl-totals">
       <span class="dl-tlbl">Celkem bez DPH:</span>
@@ -1609,35 +1634,87 @@ function generatePDF(){
 // ── Dodací listy ──
 var _dlItems=[], _dlOrder=null, _dlEditId=null;
 
+var _dlCatActive='', _dlCatQty={};
+
 function _fillDLKatalog(){
-  var sel=document.getElementById('dl-kat-sel');
-  if(!sel) return;
-  sel.innerHTML='<option value="">— přidat z katalogu —</option>';
-  var cats={};
-  P.forEach(function(p,i){ if(!deleted[i]&&!archived[i]){ if(!cats[p.cat]) cats[p.cat]=[]; cats[p.cat].push({i:i,p:p}); } });
-  Object.keys(cats).forEach(function(cat){
-    var og=document.createElement('optgroup'); og.label=cat;
-    cats[cat].forEach(function(item){
-      var o=document.createElement('option');
-      o.value=item.i;
-      o.textContent=item.p.name+(item.p.baleni?' ('+item.p.baleni+')':'');
-      og.appendChild(o);
-    });
-    sel.appendChild(og);
+  _dlCatQty={};
+  var cats=[];
+  P.forEach(function(p,i){ if(!deleted[i]&&!archived[i]&&cats.indexOf(p.cat)<0) cats.push(p.cat); });
+  if(!_dlCatActive||cats.indexOf(_dlCatActive)<0) _dlCatActive=cats[0]||'';
+  // tabs
+  var tabsEl=document.getElementById('dl-cat-tabs');
+  if(!tabsEl) return;
+  tabsEl.innerHTML='';
+  cats.forEach(function(cat){
+    var btn=document.createElement('button');
+    btn.className='dl-cat-tab'+(cat===_dlCatActive?' active':'');
+    btn.textContent=cat;
+    btn.onclick=function(){ _dlCatActive=cat; _renderDLCatGrid(); document.querySelectorAll('.dl-cat-tab').forEach(function(b){b.classList.toggle('active',b.textContent===cat);}); };
+    tabsEl.appendChild(btn);
+  });
+  _renderDLCatGrid();
+}
+
+function _renderDLCatGrid(){
+  var grid=document.getElementById('dl-prod-grid');
+  if(!grid) return;
+  var prods=P.map(function(p,i){return Object.assign({},p,{idx:i});})
+    .filter(function(p){return p.cat===_dlCatActive&&!deleted[p.idx]&&!archived[p.idx];});
+  prods.sort(function(a,b){
+    var aOk=avail[a.idx]?0:1,bOk=avail[b.idx]?0:1;
+    if(aOk!==bOk) return aOk-bOk;
+    return a.name.localeCompare(b.name,'cs');
+  });
+  grid.innerHTML='';
+  prods.forEach(function(p){
+    var ok=avail[p.idx];
+    var q=_dlCatQty[p.idx]||0;
+    var priceHtml=p.vahy
+      ? p.voc_kg+' Kč<span> / kg</span><span class="vahy-badge" style="font-size:9px;margin-left:5px">vážený</span>'
+      : p.voc+' Kč<span> / ks</span>';
+    var card=document.createElement('div');
+    card.className='dl-prod-card'+(ok?'':' unavail');
+    card.id='dlcc'+p.idx;
+    card.innerHTML='<div class="dl-prod-card-name">'+p.name+'</div>'
+      +(p.baleni?'<div style="font-size:10px;color:#837261">'+p.baleni+'</div>':'' )
+      +'<div class="dl-prod-card-price">'+priceHtml+'</div>'
+      +'<div class="dl-prod-qty-row">'
+        +'<button onclick="dlCatQty('+p.idx+',-1)">−</button>'
+        +'<input type="number" min="0" value="'+q+'" id="dlcq'+p.idx+'" oninput="_dlCatQty['+p.idx+']=parseInt(this.value)||0;dlCatHighlight('+p.idx+')">'
+        +'<button onclick="dlCatQty('+p.idx+',1)">+</button>'
+      +'</div>';
+    grid.appendChild(card);
   });
 }
 
-function dlProdZKatalogu(){
-  var sel=document.getElementById('dl-kat-sel');
-  var idx=sel.value; if(!idx) return;
-  var p=P[parseInt(idx)];
-  if(!p) return;
-  document.getElementById('dl-new-name').value=p.name;
-  document.getElementById('dl-new-voc').value=p.vahy?p.voc_kg:p.voc;
-  sel.value='';
+function dlCatQty(idx,d){
+  _dlCatQty[idx]=Math.max(0,(_dlCatQty[idx]||0)+d);
+  var inp=document.getElementById('dlcq'+idx); if(inp) inp.value=_dlCatQty[idx];
+  dlCatHighlight(idx);
+}
+function dlCatHighlight(idx){
+  var card=document.getElementById('dlcc'+idx);
+  if(card) card.style.borderColor=(_dlCatQty[idx]>0)?'#4a7a30':'';
+}
+
+function dlPridatVybrane(){
+  var added=0;
+  Object.keys(_dlCatQty).forEach(function(i){
+    var q=_dlCatQty[i]; if(!q) return;
+    var p=P[parseInt(i)]; if(!p) return;
+    var existing=_dlItems.find(function(it){return it.name===p.name;});
+    if(existing){ existing.qty=(existing.qty||0)+q; }
+    else { _dlItems.push({name:p.name,baleni:p.baleni||'',qty:q,voc:p.voc,vahy:p.vahy||false,voc_kg:p.voc_kg||0,vahy_kg:0,total:p.voc*q}); }
+    added++;
+  });
+  if(!added){ alert('Nejsou vybrány žádné produkty.'); return; }
+  _dlCatQty={};
+  _renderDLCatGrid();
+  renderDLItems();
 }
 
 function _openDLOverlay(){
+  _dlCatQty={};
   _fillDLKatalog();
   document.getElementById('dl-note').value='';
   renderDLItems();
@@ -1685,6 +1762,7 @@ function upravitDL(id, idx){
   document.getElementById('dl-note').value=dl.note||'';
   var btn=document.getElementById('dl-save-btn');
   if(btn){btn.textContent='💾 Uložit změny';}
+  _dlCatQty={};
   _fillDLKatalog();
   renderDLItems();
   document.getElementById('dl-ov').style.display='block';
