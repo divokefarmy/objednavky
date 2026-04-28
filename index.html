@@ -101,6 +101,20 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .ap-no{background:rgba(192,102,90,0.15);color:#a04438;}
 .adm-save{width:100%;padding:14px;background:#503f37;color:#DACBBC;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:16px;transition:all .2s;letter-spacing:.04em;font-family:'Inter',sans-serif;}
 .adm-save:hover{background:#1e1e1e;transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,0.25);}
+.adm-stock-badge{font-size:10px;font-weight:700;color:#c0522a;background:rgba(192,82,42,.12);border-radius:6px;padding:2px 8px;margin-left:6px;white-space:nowrap;}
+.dl-adresar-bar{position:relative;margin-bottom:10px;}
+.dl-adresar-search{width:100%;padding:10px 14px;background:#fff;border:1px solid rgba(80,63,55,0.20);border-radius:10px;font-size:13px;font-weight:600;color:#1e1e1e;outline:none;font-family:'Inter',sans-serif;}
+.dl-adresar-search:focus{border-color:#837261;}
+.dl-adresar-dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid rgba(80,63,55,0.20);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.14);z-index:200;overflow:hidden;display:none;max-height:220px;overflow-y:auto;}
+.dl-adresar-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(80,63,55,0.08);}
+.dl-adresar-item:last-child{border-bottom:none;}
+.dl-adresar-item:hover{background:rgba(80,63,55,0.07);}
+.dl-save-contact-btn{background:none;border:1px solid rgba(80,63,55,0.25);color:#503f37;border-radius:8px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;}
+.dl-save-contact-btn:hover{background:rgba(80,63,55,0.07);}
+.dl-card-vyrizena{background:rgba(74,122,48,0.07)!important;border-color:rgba(74,122,48,0.20)!important;}
+.dl-card-vyrizena .order-hd{background:rgba(74,122,48,0.05);}
+.st-dl-vyrizena{background:rgba(74,122,48,0.15);color:#2d5a1b;border:1px solid rgba(74,122,48,0.25);border-radius:20px;font-size:11px;font-weight:700;padding:4px 12px;}
+.st-dl-odeslano{background:rgba(80,63,55,0.10);color:#503f37;border-radius:20px;font-size:11px;font-weight:700;padding:4px 12px;}
 
 /* ── PAGE ── */
 .page{max-width:1000px;margin:0 auto;padding:48px 24px 100px;}
@@ -570,11 +584,17 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
       </div>
       <button class="dl-close" onclick="closeDodaciList()">✕ Zavřít</button>
     </div>
+    <div class="dl-adresar-bar">
+      <input class="dl-adresar-search" id="dl-adresar-q" placeholder="🔍 Hledat v adresáři zákazníků…" oninput="dlAdresarSearch(this.value)" onfocus="dlAdresarSearch(this.value)" onblur="setTimeout(function(){dlAdresarHide();},200)">
+      <div class="dl-adresar-dropdown" id="dl-adresar-drop"></div>
+    </div>
     <div class="dl-cust-grid">
       <div class="dl-cf"><label>Jméno zákazníka *</label><input id="dl-f-name" placeholder="Jan Novák"></div>
       <div class="dl-cf"><label>Firma</label><input id="dl-f-company" placeholder="Nepovinné"></div>
+      <div class="dl-cf"><label>IČO</label><input id="dl-f-ico" placeholder="12345678" maxlength="12"></div>
       <div class="dl-cf"><label>E-mail</label><input id="dl-f-email" type="email" placeholder="email@firma.cz"></div>
       <div class="dl-cf"><label>Telefon</label><input id="dl-f-phone" placeholder="+420 …"></div>
+      <div class="dl-cf" style="display:flex;align-items:flex-end;"><button class="dl-save-contact-btn" onclick="ulozitKontaktDL()">💾 Uložit kontakt do adresáře</button></div>
     </div>
     <div class="dl-catalog" id="dl-catalog-section">
       <div class="dl-catalog-hd">
@@ -1263,7 +1283,7 @@ function renderOrders(){
     html+='<div class="order-card'+(isStorno?' storno-card':'')+'" id="oc'+idx+'">'
       +'<div class="order-hd" onclick="toggleOrder('+idx+')">'
         +'<span class="order-date">'+d+'</span>'
-        +'<span class="order-name">'+o.customer_name+'</span>'
+        +'<span class="order-name">'+o.customer_name+(o.company?'<br><small style="font-size:11px;font-weight:500;opacity:.65;letter-spacing:0">'+o.company+'</small>':'')+'</span>'
         +'<span class="order-total">'+o.total_without_vat.toFixed(2)+' Kč</span>'
         +'<span class="order-status '+(stCls[st]||'st-nova')+'" id="ostlbl'+idx+'">'+(stLabel[st]||'Nová')+'</span>'
       +'</div>'
@@ -1448,6 +1468,7 @@ function renderAdmin(q){
           +(isArch
             ?'<span class="apill ap-arch">Archivováno</span>'
             :'<span class="apill '+(ok?'ap-ok':'ap-no')+'" id="ap'+i+'">'+(ok?'Skladem':'Nedostupné')+'</span>'
+              +(stockQty[i]>0?'<span class="adm-stock-badge" id="admsb'+i+'">Zbývá '+stockQty[i]+' ks</span>':'<span class="adm-stock-badge" id="admsb'+i+'" style="display:none"></span>')
               +'<label class="tgl"><input type="checkbox" '+(ok?'checked':'')+' onchange="tog('+i+',this.checked)"><span class="tsl"></span></label>'
           )
           +'<div class="adm-item-actions">'
@@ -1749,9 +1770,51 @@ function openDodaciList(idx){
   });
   document.getElementById('dl-f-name').value=_dlOrder.customer_name||'';
   document.getElementById('dl-f-company').value=_dlOrder.company||'';
+  document.getElementById('dl-f-ico').value=_dlOrder.ico||'';
   document.getElementById('dl-f-email').value=_dlOrder.email||'';
   document.getElementById('dl-f-phone').value=_dlOrder.phone||'';
   _openDLOverlay();
+}
+
+var _contacts=[];
+function loadContacts(){ try{ _contacts=JSON.parse(localStorage.getItem('df_contacts')||'[]'); }catch(e){ _contacts=[]; } }
+function saveContacts(){ try{ localStorage.setItem('df_contacts',JSON.stringify(_contacts)); }catch(e){} }
+function dlAdresarSearch(val){
+  var drop=document.getElementById('dl-adresar-drop'); if(!drop) return;
+  if(!val||!val.trim()){ drop.style.display='none'; drop.innerHTML=''; return; }
+  var q=val.toLowerCase();
+  var matches=_contacts.filter(function(c){ return c.name.toLowerCase().indexOf(q)>=0||(c.company||'').toLowerCase().indexOf(q)>=0; });
+  if(!matches.length){ drop.style.display='none'; drop.innerHTML=''; return; }
+  drop.style.display='block';
+  drop.innerHTML=matches.map(function(c,i){
+    return '<div class="dl-adresar-item" onmousedown="dlVyplnitKontakt('+i+')">'
+      +'<strong>'+c.name+'</strong>'+(c.company?' <span style="opacity:.7">· '+c.company+'</span>':'')+(c.ico?' <span style="opacity:.5;font-size:11px">IČO: '+c.ico+'</span>':'')
+      +'</div>';
+  }).join('');
+}
+function dlAdresarHide(){ var drop=document.getElementById('dl-adresar-drop'); if(drop){drop.style.display='none';drop.innerHTML='';} }
+function dlVyplnitKontakt(idx){
+  var c=_contacts[idx]; if(!c) return;
+  document.getElementById('dl-f-name').value=c.name||'';
+  document.getElementById('dl-f-company').value=c.company||'';
+  document.getElementById('dl-f-ico').value=c.ico||'';
+  document.getElementById('dl-f-email').value=c.email||'';
+  document.getElementById('dl-f-phone').value=c.phone||'';
+  document.getElementById('dl-adresar-q').value='';
+  dlAdresarHide();
+}
+function ulozitKontaktDL(){
+  var name=document.getElementById('dl-f-name').value.trim();
+  if(!name){ alert('Zadejte jméno zákazníka.'); return; }
+  var c={ name:name, company:document.getElementById('dl-f-company').value.trim(), ico:document.getElementById('dl-f-ico').value.trim(), email:document.getElementById('dl-f-email').value.trim(), phone:document.getElementById('dl-f-phone').value.trim() };
+  var idx=_contacts.findIndex(function(x){ return x.name===name; });
+  if(idx>=0){ _contacts[idx]=c; } else { _contacts.push(c); }
+  saveContacts();
+  var toast=document.createElement('div');
+  toast.textContent='✓ Kontakt uložen do adresáře';
+  toast.style.cssText='position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#4a7a30;color:#fff;padding:12px 28px;border-radius:12px;font-size:15px;font-weight:600;z-index:9999;box-shadow:0 4px 18px rgba(0,0,0,.3);pointer-events:none;transition:opacity .4s';
+  document.body.appendChild(toast);
+  setTimeout(function(){toast.style.opacity='0';setTimeout(function(){toast.remove();},400);},2000);
 }
 
 function openNovyDodaciList(){
@@ -1759,8 +1822,10 @@ function openNovyDodaciList(){
   _dlItems=[];
   document.getElementById('dl-f-name').value='';
   document.getElementById('dl-f-company').value='';
+  document.getElementById('dl-f-ico').value='';
   document.getElementById('dl-f-email').value='';
   document.getElementById('dl-f-phone').value='';
+  document.getElementById('dl-adresar-q').value='';
   _openDLOverlay();
 }
 
@@ -1775,8 +1840,10 @@ function upravitDL(id, idx){
   });
   document.getElementById('dl-f-name').value=dl.customer_name||'';
   document.getElementById('dl-f-company').value=dl.company||'';
+  document.getElementById('dl-f-ico').value=dl.ico||'';
   document.getElementById('dl-f-email').value=dl.customer_email||'';
   document.getElementById('dl-f-phone').value=dl.phone||'';
+  document.getElementById('dl-adresar-q').value='';
   document.getElementById('dl-note').value=dl.note||'';
   var btn=document.getElementById('dl-save-btn');
   if(btn){btn.textContent='💾 Uložit změny';}
@@ -1797,6 +1864,8 @@ function closeDodaciList(){
     }
   }
   document.getElementById('dl-ov').style.display='none'; _dlItems=[]; _dlOrder=null; _dlEditId=null; _dlSaved=false;
+  ['dl-f-name','dl-f-company','dl-f-ico','dl-f-email','dl-f-phone','dl-adresar-q'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  dlAdresarHide();
   var btn=document.getElementById('dl-save-btn');
   if(btn){btn.textContent='💾 Uložit';btn.style.background='#4a7a30';}
 }
@@ -1863,6 +1932,7 @@ function _getDLMeta(){
   var cust={
     name: document.getElementById('dl-f-name').value.trim() || ((_dlOrder&&_dlOrder.customer_name)||'Zákazník'),
     company: document.getElementById('dl-f-company').value.trim(),
+    ico: document.getElementById('dl-f-ico').value.trim(),
     email: document.getElementById('dl-f-email').value.trim(),
     phone: document.getElementById('dl-f-phone').value.trim()
   };
@@ -1886,6 +1956,7 @@ function stahnoutDL(){
   });
   var info='';
   if(m.cust.company) info+='<div>'+m.cust.company+'</div>';
+  if(m.cust.ico) info+='<div>IČO: '+m.cust.ico+'</div>';
   if(m.cust.email) info+='<div>'+m.cust.email+'</div>';
   if(m.cust.phone) info+='<div>'+m.cust.phone+'</div>';
   if(_dlOrder&&_dlOrder.address) info+='<div>'+_dlOrder.address+'</div>';
@@ -1935,6 +2006,64 @@ function stahnoutDL(){
   setTimeout(function(){ win.print(); URL.revokeObjectURL(blobUrl); },500);
 }
 
+function tiskniUlozeneDLPDF(idx){
+  var dl=_dodaciListy[idx]; if(!dl) return;
+  var items=dl.items||[];
+  var datum=new Date(dl.created_at).toLocaleDateString('cs-CZ');
+  var dlNum='DL-'+new Date(dl.created_at).toISOString().slice(0,10).replace(/-/g,'');
+  var cust={name:dl.customer_name||'',company:dl.company||'',ico:dl.ico||'',email:dl.customer_email||'',phone:dl.phone||''};
+  var tb=dl.total_without_vat||0;
+  var rows='';
+  items.forEach(function(it){
+    var tot=it.vahy?(it.vahy_kg||0)*(it.voc_kg||0):(it.qty||0)*(it.voc||0);
+    rows+='<tr>'
+      +'<td>'+it.name+(it.vahy?' <span style="font-size:10px;color:#4a7a30">⚖ vážený</span>':'')+'</td>'
+      +'<td>'+(it.baleni||'—')+'</td>'
+      +'<td style="text-align:center">'+(it.qty||0)+' ks</td>'
+      +'<td style="text-align:center">'+(it.vahy?(it.vahy_kg||0).toFixed(3)+' kg':'—')+'</td>'
+      +'<td style="text-align:right">'+(it.vahy?(it.voc_kg||0).toFixed(2)+' Kč/kg':(it.voc||0).toFixed(2)+' Kč/ks')+'</td>'
+      +'<td style="text-align:right;font-weight:800">'+tot.toFixed(2)+' Kč</td>'
+      +'</tr>';
+  });
+  var info='';
+  if(cust.company) info+='<div>'+cust.company+'</div>';
+  if(cust.ico) info+='<div>IČO: '+cust.ico+'</div>';
+  if(cust.email) info+='<div>'+cust.email+'</div>';
+  if(cust.phone) info+='<div>'+cust.phone+'</div>';
+  var pdfName='DL_'+cust.name.replace(/\s+/g,'_')+'_'+new Date(dl.created_at).toISOString().slice(0,10);
+  var VAT_=0.12;
+  var htmlStr='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+pdfName+'</title><style>'
+    +'*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}'
+    +'body{background:#fff;color:#1e1e1e;padding:20mm 14mm;font-size:9pt;}'
+    +'.header{background:#503f37;color:#DACBBC;padding:10px 14px;margin:-20mm -14mm 14mm;display:flex;justify-content:space-between;align-items:center;}'
+    +'.header h1{font-size:13pt;font-weight:800;letter-spacing:.03em;}'
+    +'.header small{font-size:7.5pt;opacity:.85;}'
+    +'.section-label{font-size:7.5pt;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#837261;border-bottom:1px solid #d6cbbf;padding-bottom:3px;margin-bottom:8px;}'
+    +'.recipient{margin-bottom:14px;}.recipient .name{font-size:11pt;font-weight:800;margin-bottom:3px;}.recipient div{font-size:8.5pt;color:#503f37;line-height:1.6;}'
+    +'table{width:100%;border-collapse:collapse;margin-bottom:10px;}th{background:#503f37;color:#DACBBC;font-size:7.5pt;font-weight:800;padding:5px 7px;text-align:left;}td{padding:5px 7px;font-size:8.5pt;border-bottom:1px solid #e8e0d6;}tr:nth-child(even) td{background:#f5f0ea;}'
+    +'.totals{background:#DAC9B8;padding:10px 14px;border-radius:6px;display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-bottom:14px;}'
+    +'.totals .row{display:flex;gap:40px;font-size:8.5pt;color:#503f37;}.totals .big{font-size:11pt;font-weight:800;color:#1e1e1e;}'
+    +'.note{font-size:8pt;color:#837261;font-style:italic;margin-bottom:14px;}'
+    +'.sigs{display:flex;justify-content:space-between;margin-top:24px;}.sig{border-top:1px solid #b0a090;padding-top:4px;width:44%;font-size:7.5pt;color:#837261;}'
+    +'.footer{position:fixed;bottom:8mm;left:14mm;right:14mm;background:#503f37;color:#DACBBC;text-align:center;font-size:7pt;padding:5px;}@media print{.footer{position:fixed;}}'
+    +'</style></head><body>'
+    +'<div class="header"><h1>DIVOKÉ FARMY — DODACÍ LIST</h1>'
+    +'<div style="text-align:right"><div style="font-size:10pt;font-weight:800">'+dlNum+'</div><small>'+datum+'</small></div></div>'
+    +'<div class="recipient"><div class="section-label">Příjemce</div>'
+    +'<div class="name">'+cust.name+'</div>'+info+'</div>'
+    +'<table><tr><th>Produkt</th><th>Balení</th><th style="text-align:center">Ks</th><th style="text-align:center">Váha</th><th style="text-align:right">Cena</th><th style="text-align:right">Celkem</th></tr>'+rows+'</table>'
+    +'<div class="totals"><div class="row"><span>Celkem bez DPH</span><span>'+tb.toFixed(2)+' Kč</span></div><div class="row"><span>DPH 12%</span><span>'+(tb*VAT_).toFixed(2)+' Kč</span></div><div class="row big"><span>Celkem s DPH</span><span>'+(tb*(1+VAT_)).toFixed(2)+' Kč</span></div></div>'
+    +(dl.note?'<div class="note">Poznámka: '+dl.note+'</div>':'')
+    +'<div class="sigs"><div class="sig">Podpis odesílatele</div><div class="sig">Podpis příjemce</div></div>'
+    +'<div class="footer">DF obchodní s.r.o. &nbsp;|&nbsp; IČO: 29279313 &nbsp;|&nbsp; Šebrov 195, 679 22 Lipůvka &nbsp;|&nbsp; divokefarmy.cz</div>'
+    +'</body></html>';
+  var blob=new Blob([htmlStr],{type:'text/html'});
+  var blobUrl=URL.createObjectURL(blob);
+  var win=window.open(blobUrl,'_blank','width=850,height=1100');
+  win.focus();
+  setTimeout(function(){ win.print(); URL.revokeObjectURL(blobUrl); },500);
+}
+
 function odeslatDL(){
   if(!_dlItems.length){alert('Žádné položky.');return;}
   var m=_getDLMeta();
@@ -1967,6 +2096,7 @@ function ulozitDL(){
     customer_name:m.cust.name,
     customer_email:m.cust.email||null,
     company:m.cust.company||null,
+    ico:m.cust.ico||null,
     phone:m.cust.phone||null,
     items:_dlItems.map(function(it){return{name:it.name,baleni:it.baleni||'',qty:it.qty||0,voc:it.voc||0,vahy:it.vahy||false,voc_kg:it.voc_kg||0,vahy_kg:it.vahy_kg||0,total:(it.vahy?(it.vahy_kg||0)*(it.voc_kg||0):(it.qty||0)*(it.voc||0))};}),
     total_without_vat:m.tb, note:m.note||null
@@ -2011,18 +2141,29 @@ function renderDodaciListy(){
     var d=new Date(dl.created_at).toLocaleDateString('cs-CZ');
     var items=dl.items||[];
     var isArch=archivedIds.indexOf(dl.id)>=0;
+    var dlStatus=dl.status||'odeslano';
+    var isVyrizena=dlStatus==='vyrizeno';
     var irows=items.map(function(it){return'<tr><td>'+(it.name||'')+(it.baleni?' ('+it.baleni+')':'')+'</td><td style="text-align:center">'+(it.qty||0)+' ks</td><td style="text-align:right;font-weight:800">'+(it.total||0).toFixed(2)+' Kč</td></tr>';}).join('');
-    html+='<div class="order-card'+(isArch?' storno-card':'')+'" id="dlc'+idx+'">'
+    var statusBadge=isArch
+      ?'<span class="order-status st-archivovana">Archivováno</span>'
+      :(isVyrizena
+        ?'<span class="st-dl-vyrizena" id="dlstlbl'+idx+'">✓ Vyřízeno</span>'
+        :'<span class="st-dl-odeslano" id="dlstlbl'+idx+'">Odesláno</span>');
+    html+='<div class="order-card'+(isArch?' storno-card':'')+(isVyrizena?' dl-card-vyrizena':'')+'" id="dlc'+idx+'">'
       +'<div class="order-hd" onclick="this.nextElementSibling.classList.toggle(\'show\')">'
       +'<span class="order-date">'+d+'</span>'
-      +'<span class="order-name">'+(dl.customer_name||'')+'</span>'
+      +'<span class="order-name">'+(dl.customer_name||'')+(dl.company?'<br><small style="font-size:11px;font-weight:500;opacity:.65">'+dl.company+'</small>':'')+'</span>'
       +'<span class="order-total">'+(dl.total_without_vat||0).toFixed(2)+' Kč</span>'
-      +'<span class="order-status '+(isArch?'st-archivovana':'st-vyrizena')+'">'+(isArch?'Archivováno':'Odesláno')+'</span>'
+      +statusBadge
       +'</div>'
       +'<div class="order-body">'
-      +'<div class="order-info">'+(dl.company||'')+(dl.customer_email?' · '+dl.customer_email:'')+'</div>'
+      +'<div class="order-info">'+(dl.ico?'IČO: '+dl.ico+' · ':'')+''+(dl.customer_email?dl.customer_email:'')+(dl.phone?' · '+dl.phone:'')+'</div>'
       +'<table class="order-items-tbl"><tr><th>Produkt</th><th style="text-align:center">Množství</th><th style="text-align:right">Celkem</th></tr>'+irows+'</table>'
       +'<div class="order-actions">'
+      +'<button class="order-pdf-btn" onclick="tiskniUlozeneDLPDF('+idx+')">🖨 PDF / Tisk</button>'
+      +(isArch?'':(!isVyrizena
+        ?'<button class="muted-btn" style="background:rgba(74,122,48,0.12);color:#2d5a1b;border-color:rgba(74,122,48,0.3)" onclick="setDLStatus(\''+dl.id+'\','+idx+',\'vyrizeno\')">✓ Označit vyřízeno</button>'
+        :'<button class="muted-btn" onclick="setDLStatus(\''+dl.id+'\','+idx+',\'odeslano\')">↩ Odznačit</button>'))
       +'<button class="muted-btn" onclick="upravitDL(\''+dl.id+'\','+idx+')">✎ Upravit</button>'
       +'<button class="muted-btn" onclick="archivujDL(\''+dl.id+'\','+idx+')">'+(isArch?'↩ Obnovit':'📦 Archivovat')+'</button>'
       +'<button class="danger-btn" style="border-color:rgba(100,0,0,0.3);background:rgba(100,0,0,0.07);color:#800" onclick="smazatDL(\''+dl.id+'\','+idx+')">🗑 Smazat</button>'
@@ -2039,6 +2180,13 @@ function archivujDL(id,idx){
     localStorage.setItem('df_dl_arch',JSON.stringify(arch));
   }catch(e){}
   renderDodaciListy();
+}
+function setDLStatus(id,idx,status){
+  _db.from('delivery_notes').update({status:status}).eq('id',id).then(function(res){
+    if(res.error){ alert('Chyba: '+res.error.message+'\n\nPotřebuješ přidat sloupec:\nALTER TABLE delivery_notes ADD COLUMN IF NOT EXISTS status TEXT DEFAULT \'odeslano\';'); return; }
+    if(_dodaciListy[idx]) _dodaciListy[idx].status=status;
+    renderDodaciListy();
+  });
 }
 function smazatDL(id,idx){
   if(!confirm('Opravdu trvale smazat tento dodací list? Tato akce je nevratná.')) return;
@@ -2199,6 +2347,7 @@ document.getElementById('dnes').textContent=new Date().toLocaleDateString('cs-CZ
 
 // Load product state: Supabase first, localStorage fallback
 document.getElementById('pc').innerHTML='<div style="padding:32px 0;text-align:center;color:#837261;font-size:13px;font-weight:600;letter-spacing:.04em;">Načítám produkty…</div>';
+loadContacts();
 _db.from('product_state').select('*').eq('id',1).single().then(function(res){
   if(!res.error && res.data){
     _applyState(res.data);
