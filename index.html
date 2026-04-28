@@ -615,6 +615,11 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
       <span class="dl-tlbl">Celkem bez DPH:</span>
       <span class="dl-tval" id="dl-total-val">0 Kč</span>
     </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:10px 14px;background:rgba(255,255,255,0.4);border-radius:10px;border:1px solid rgba(80,63,55,0.12);">
+      <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#837261;white-space:nowrap;">Datum doručení</label>
+      <input type="date" id="dl-f-delivery-date" style="padding:7px 11px;background:#fff;border:1px solid rgba(80,63,55,0.20);border-radius:8px;font-size:13px;font-weight:600;color:#1e1e1e;outline:none;font-family:'Inter',sans-serif;">
+      <span style="font-size:11px;color:#837261;">(nepovinné — pro váš přehled)</span>
+    </div>
     <textarea class="dl-note-inp" id="dl-note" placeholder="Poznámka k dodacímu listu…"></textarea>
     <div class="dl-actions">
       <button class="dl-send-btn" onclick="odeslatDL()">Stáhnout PDF + Odeslat emailem →</button>
@@ -1825,6 +1830,7 @@ function openNovyDodaciList(){
   document.getElementById('dl-f-ico').value='';
   document.getElementById('dl-f-email').value='';
   document.getElementById('dl-f-phone').value='';
+  document.getElementById('dl-f-delivery-date').value='';
   document.getElementById('dl-adresar-q').value='';
   _openDLOverlay();
 }
@@ -1843,6 +1849,7 @@ function upravitDL(id, idx){
   document.getElementById('dl-f-ico').value=dl.ico||'';
   document.getElementById('dl-f-email').value=dl.customer_email||'';
   document.getElementById('dl-f-phone').value=dl.phone||'';
+  document.getElementById('dl-f-delivery-date').value=dl.delivery_date||'';
   document.getElementById('dl-adresar-q').value='';
   document.getElementById('dl-note').value=dl.note||'';
   var btn=document.getElementById('dl-save-btn');
@@ -1864,7 +1871,7 @@ function closeDodaciList(){
     }
   }
   document.getElementById('dl-ov').style.display='none'; _dlItems=[]; _dlOrder=null; _dlEditId=null; _dlSaved=false;
-  ['dl-f-name','dl-f-company','dl-f-ico','dl-f-email','dl-f-phone','dl-adresar-q'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['dl-f-name','dl-f-company','dl-f-ico','dl-f-email','dl-f-phone','dl-f-delivery-date','dl-adresar-q'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   dlAdresarHide();
   var btn=document.getElementById('dl-save-btn');
   if(btn){btn.textContent='💾 Uložit';btn.style.background='#4a7a30';}
@@ -1936,7 +1943,8 @@ function _getDLMeta(){
     email: document.getElementById('dl-f-email').value.trim(),
     phone: document.getElementById('dl-f-phone').value.trim()
   };
-  return {tb:tb,datum:datum,dlNum:dlNum,note:note,cust:cust};
+  var deliveryDate=document.getElementById('dl-f-delivery-date').value||null;
+  return {tb:tb,datum:datum,dlNum:dlNum,note:note,cust:cust,deliveryDate:deliveryDate};
 }
 
 function stahnoutDL(){
@@ -2098,6 +2106,7 @@ function ulozitDL(){
     company:m.cust.company||null,
     ico:m.cust.ico||null,
     phone:m.cust.phone||null,
+    delivery_date:m.deliveryDate||null,
     items:_dlItems.map(function(it){return{name:it.name,baleni:it.baleni||'',qty:it.qty||0,voc:it.voc||0,vahy:it.vahy||false,voc_kg:it.voc_kg||0,vahy_kg:it.vahy_kg||0,total:(it.vahy?(it.vahy_kg||0)*(it.voc_kg||0):(it.qty||0)*(it.voc||0))};}),
     total_without_vat:m.tb, note:m.note||null
   };
@@ -2152,9 +2161,10 @@ function renderDodaciListy(){
       :(isVyrizena
         ?'<span class="st-dl-vyrizena" id="dlstlbl'+idx+'">✓ Vyřízeno</span>'
         :'<span class="st-dl-odeslano" id="dlstlbl'+idx+'">Odesláno</span>');
+    var deliveryDateStr=dl.delivery_date?new Date(dl.delivery_date+'T12:00:00').toLocaleDateString('cs-CZ'):'';
     html+='<div class="order-card'+(isArch?' storno-card':'')+(isVyrizena?' dl-card-vyrizena':'')+'" id="dlc'+idx+'">'
       +'<div class="order-hd" onclick="this.nextElementSibling.classList.toggle(\'show\')">'
-      +'<span class="order-date">'+d+'</span>'
+      +'<span class="order-date">'+d+(deliveryDateStr?'<br><span style="font-size:10px;color:#4a7a30;font-weight:700">→ '+deliveryDateStr+'</span>':'')+'</span>'
       +'<span class="order-name">'+(dl.customer_name||'')+(dl.company?'<br><small style="font-size:11px;font-weight:500;opacity:.65">'+dl.company+'</small>':'')+'</span>'
       +'<span class="order-total">'+(dl.total_without_vat||0).toFixed(2)+' Kč</span>'
       +statusBadge
