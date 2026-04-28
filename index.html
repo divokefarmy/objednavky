@@ -2143,7 +2143,10 @@ function renderDodaciListy(){
     var isArch=archivedIds.indexOf(dl.id)>=0;
     var dlStatus=dl.status||'odeslano';
     var isVyrizena=dlStatus==='vyrizeno';
-    var irows=items.map(function(it){return'<tr><td>'+(it.name||'')+(it.baleni?' ('+it.baleni+')':'')+'</td><td style="text-align:center">'+(it.qty||0)+' ks</td><td style="text-align:right;font-weight:800">'+(it.total||0).toFixed(2)+' Kč</td></tr>';}).join('');
+    var irows=items.map(function(it){
+      var qty=(it.qty||0)+' ks'+(it.vahy&&it.vahy_kg?'<br><span style="font-size:10px;color:#4a7a30;font-weight:700">'+parseFloat(it.vahy_kg).toFixed(3)+' kg</span>':'');
+      return'<tr><td>'+(it.name||'')+(it.baleni?' ('+it.baleni+')':'')+'</td><td style="text-align:center">'+qty+'</td><td style="text-align:right;font-weight:800">'+(it.total||0).toFixed(2)+' Kč</td></tr>';
+    }).join('');
     var statusBadge=isArch
       ?'<span class="order-status st-archivovana">Archivováno</span>'
       :(isVyrizena
