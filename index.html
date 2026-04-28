@@ -851,6 +851,7 @@ let prodOverrides = {};
 let archived = {};
 let deleted = {};
 let customProds = [];
+let stockQty = {};
 
 function _applyState(d){
   if(d.avail) Object.assign(avail, d.avail);
@@ -864,10 +865,11 @@ function _applyState(d){
     customProds = d.custom_prods;
     customProds.forEach(function(p){ P.push(Object.assign({_custom:true},p)); });
   }
+  Object.keys(prodOverrides).forEach(function(i){ if(prodOverrides[i] && prodOverrides[i].stock>0) stockQty[i]=prodOverrides[i].stock; });
 }
 
 function fmt(n){ return n.toLocaleString('cs-CZ',{minimumFractionDigits:2,maximumFractionDigits:2})+' Kč'; }
-function changeQty(i,d){ var el=document.getElementById('q'+i); if(!el) return; el.value=Math.max(0,(parseInt(el.value)||0)+d); recalc(); }
+function changeQty(i,d){ var el=document.getElementById('q'+i); if(!el) return; var sq=stockQty[i]||0; var nv=Math.max(0,(parseInt(el.value)||0)+d); if(sq>0) nv=Math.min(nv,sq); el.value=nv; recalc(); }
 
 function buildAll(){
   var cats = [];
@@ -903,7 +905,13 @@ function buildAll(){
           ? '<div class="prod-card-price">'+p.voc+' Kč<span class="prod-price-per"> / ks</span></div>'
             +'<div class="prod-vahy-sub"><span class="prod-vahy-kg">'+p.voc_kg+' Kč/kg</span><span class="vahy-badge">vážený produkt</span></div>'
           : '<div class="prod-card-price">'+p.voc+' Kč<span class="prod-price-per"> / ks</span></div>')
-        +(ok?'<div class="prod-card-qty-row"><button class="qty-btn" onclick="changeQty('+p.idx+',-1)">−</button><input class="qty-inp" type="number" min="0" step="1" value="0" id="q'+p.idx+'" oninput="recalc()"><button class="qty-btn" onclick="changeQty('+p.idx+',1)">+</button></div>':'')
+        +(ok?(function(){
+            var sq=stockQty[p.idx]||0;
+            var maxAttr=sq>0?' max="'+sq+'"':'';
+            var stockBadge=sq>0?'<span style="font-size:11px;font-weight:700;color:#c0522a;background:rgba(192,82,42,.1);border-radius:6px;padding:2px 7px;">Zbývá '+sq+' ks</span>':'';
+            return '<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:2px;">'+stockBadge+'</div>'
+              +'<div class="prod-card-qty-row"><button class="qty-btn" onclick="changeQty('+p.idx+',-1)">−</button><input class="qty-inp" type="number" min="0" step="1" value="0"'+maxAttr+' id="q'+p.idx+'" oninput="recalc()"><button class="qty-btn" onclick="changeQty('+p.idx+',1)">+</button></div>';
+          })():'')
         +'<div class="prod-card-total" id="l'+p.idx+'"></div>'
         +'</div>';
     });
@@ -1317,8 +1325,8 @@ function archivujObjednavku(id,idx){
 function smazatObjednavku(id,idx){
   if(!confirm('Opravdu trvale smazat tuto objednávku? Tato akce je nevratná.')) return;
   _db.from('orders').delete().eq('id',id).then(function(res){
-    if(res.error){ alert('Chyba: '+res.error.message); return; }
-    _orders.splice(idx,1);
+    if(res.error){ alert('Chyba při mazání: '+res.error.message+'\n\nPokud se objednávka vrátí po obnovení, spusť v Supabase SQL Editor:\nCREATE POLICY "admin_delete_orders" ON orders FOR DELETE TO authenticated USING (true);'); return; }
+    _orders=_orders.filter(function(o){ return o.id!==id; });
     renderOrders();
   });
 }
@@ -1411,6 +1419,7 @@ function saveAdmin(keepOpen){
     localStorage.setItem('df_arch',JSON.stringify(archived));
     localStorage.setItem('df_del',JSON.stringify(deleted));
     localStorage.setItem('df_cp',JSON.stringify(customs));
+    localStorage.setItem('df_sq',JSON.stringify(stockQty));
   }catch(e){}
   _db.from('product_state').upsert([{
     id:1, avail:avail, overrides:prodOverrides, archived:archived, deleted:deleted,
@@ -1454,6 +1463,7 @@ function renderAdmin(q){
             +'<div class="adm-ef"><label>Balení / Objem</label><input id="adb'+i+'" value="'+esc(p.baleni)+'"></div>'
             +'<div class="adm-ef"><label>Skladování</label><input id="ads'+i+'" value="'+esc(p.sklad)+'"></div>'
             +'<div class="adm-ef"><label>Trvanlivost</label><input id="adt'+i+'" value="'+esc(p.trv)+'"></div>'
+            +'<div class="adm-ef"><label>Počet kusů skladem <span style="font-weight:400;font-size:11px;opacity:.65">(0 = neomezeno)</span></label><input type="number" id="adstock'+i+'" min="0" value="'+(stockQty[i]||0)+'"></div>'
             +'<div class="adm-ef adm-vahy-row"><label class="adm-vahy-label"><input type="checkbox" id="advahy'+i+'" '+(p.vahy?'checked':'')+' onchange="toggleVahyKg('+i+',this.checked)"> Vážený produkt (fakturace dle kg)</label></div>'
             +'<div class="adm-ef" style="'+(p.vahy?'':'display:none')+'" id="advefdlkg'+i+'"><label>VOC cena za kg (Kč/kg bez DPH)</label><input type="number" id="advkg'+i+'" value="'+(p.voc_kg||0)+'"></div>'
           +'</div>'
@@ -1492,8 +1502,11 @@ function saveProd(i){
   var vahyEl=document.getElementById('advahy'+i);
   var vahy=vahyEl?vahyEl.checked:P[i].vahy;
   var voc_kg=parseFloat(document.getElementById('advkg'+i).value)||0;
+  var stockEl=document.getElementById('adstock'+i);
+  var stock=stockEl?Math.max(0,parseInt(stockEl.value)||0):0;
   P[i].name=name;P[i].voc=voc;P[i].baleni=baleni;P[i].sklad=sklad;P[i].trv=trv;P[i].vahy=vahy;P[i].voc_kg=voc_kg;
-  prodOverrides[i]={name:name,voc:voc,baleni:baleni,sklad:sklad,trv:trv,vahy:vahy,voc_kg:voc_kg};
+  prodOverrides[i]={name:name,voc:voc,baleni:baleni,sklad:sklad,trv:trv,vahy:vahy,voc_kg:voc_kg,stock:stock};
+  if(stock>0){ stockQty[i]=stock; } else { delete stockQty[i]; }
   var pn=document.getElementById('admpn'+i);if(pn)pn.textContent=name;
   var bl=document.getElementById('admbl'+i);if(bl)bl.textContent=baleni;
   toggleEdit(i);
@@ -2195,6 +2208,7 @@ _db.from('product_state').select('*').eq('id',1).single().then(function(res){
     try{ var ar=localStorage.getItem('df_arch'); if(ar) archived=JSON.parse(ar); }catch(e){}
     try{ var dl=localStorage.getItem('df_del'); if(dl) deleted=JSON.parse(dl); }catch(e){}
     try{ var cp=localStorage.getItem('df_cp'); if(cp){ customProds=JSON.parse(cp); customProds.forEach(function(p){ P.push(Object.assign({_custom:true},p)); }); } }catch(e){}
+    try{ var po2=localStorage.getItem('df_po'); if(po2){ var po2p=JSON.parse(po2); Object.keys(po2p).forEach(function(i){ if(po2p[i]&&po2p[i].stock>0) stockQty[i]=po2p[i].stock; }); } }catch(e){}
   }
   buildAll();
 });
