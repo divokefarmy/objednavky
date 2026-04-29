@@ -623,7 +623,8 @@ body.light .field input,body.light .field textarea{background:#fff;color:#1e1e1e
     <textarea class="dl-note-inp" id="dl-note" placeholder="Poznámka k dodacímu listu…"></textarea>
     <div class="dl-actions">
       <button class="dl-send-btn" onclick="odeslatDL()">Stáhnout PDF + Odeslat emailem →</button>
-      <button class="dl-pdf-btn" onclick="stahnoutDL()">Jen PDF</button>
+      <button class="dl-pdf-btn" onclick="stahnoutDL()">🖨 Tisk / PDF</button>
+      <button class="dl-pdf-btn" onclick="stahnoutDLSoubor()">💾 Uložit do počítače</button>
       <button class="dl-pdf-btn" id="dl-save-btn" onclick="ulozitDL()" style="background:#4a7a30;color:#fff;">💾 Uložit</button>
     </div>
   </div>
@@ -1947,15 +1948,13 @@ function _getDLMeta(){
   return {tb:tb,datum:datum,dlNum:dlNum,note:note,cust:cust,deliveryDate:deliveryDate};
 }
 
-function stahnoutDL(){
-  if(!_dlItems.length){alert('Žádné položky.');return;}
-  var m=_getDLMeta();
+function _buildDLHtml(m, items, orderAddr){
   var rows='';
-  _dlItems.forEach(function(it){
+  items.forEach(function(it){
     var tot=it.vahy?(it.vahy_kg||0)*(it.voc_kg||0):(it.qty||0)*(it.voc||0);
     rows+='<tr>'
       +'<td>'+it.name+(it.vahy?' <span style="font-size:10px;color:#4a7a30">⚖ vážený</span>':'')+'</td>'
-      +'<td>'+( it.baleni||'—')+'</td>'
+      +'<td>'+(it.baleni||'—')+'</td>'
       +'<td style="text-align:center">'+(it.qty||0)+' ks</td>'
       +'<td style="text-align:center">'+(it.vahy?(it.vahy_kg||0).toFixed(3)+' kg':'—')+'</td>'
       +'<td style="text-align:right">'+(it.vahy?(it.voc_kg||0).toFixed(2)+' Kč/kg':(it.voc||0).toFixed(2)+' Kč/ks')+'</td>'
@@ -1967,46 +1966,39 @@ function stahnoutDL(){
   if(m.cust.ico) info+='<div>IČO: '+m.cust.ico+'</div>';
   if(m.cust.email) info+='<div>'+m.cust.email+'</div>';
   if(m.cust.phone) info+='<div>'+m.cust.phone+'</div>';
-  if(_dlOrder&&_dlOrder.address) info+='<div>'+_dlOrder.address+'</div>';
-
+  if(orderAddr) info+='<div>'+orderAddr+'</div>';
   var pdfName='DL_'+m.cust.name.replace(/\s+/g,'_')+'_'+new Date().toISOString().slice(0,10);
-  var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+pdfName+'</title><style>'
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+pdfName+'</title><style>'
     +'*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}'
     +'body{background:#fff;color:#1e1e1e;padding:20mm 14mm;font-size:9pt;}'
     +'.header{background:#503f37;color:#DACBBC;padding:10px 14px;margin:-20mm -14mm 14mm;display:flex;justify-content:space-between;align-items:center;}'
-    +'.header h1{font-size:13pt;font-weight:800;letter-spacing:.03em;}'
-    +'.header small{font-size:7.5pt;opacity:.85;}'
+    +'.header h1{font-size:13pt;font-weight:800;letter-spacing:.03em;}.header small{font-size:7.5pt;opacity:.85;}'
     +'.section-label{font-size:7.5pt;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#837261;border-bottom:1px solid #d6cbbf;padding-bottom:3px;margin-bottom:8px;}'
-    +'.recipient{margin-bottom:14px;}'
-    +'.recipient .name{font-size:11pt;font-weight:800;margin-bottom:3px;}'
-    +'.recipient div{font-size:8.5pt;color:#503f37;line-height:1.6;}'
-    +'table{width:100%;border-collapse:collapse;margin-bottom:10px;}'
-    +'th{background:#503f37;color:#DACBBC;font-size:7.5pt;font-weight:800;padding:5px 7px;text-align:left;}'
-    +'td{padding:5px 7px;font-size:8.5pt;border-bottom:1px solid #e8e0d6;}'
-    +'tr:nth-child(even) td{background:#f5f0ea;}'
-    +'.totals{background:#DAC9B8;padding:10px 14px;border-radius:6px;display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-bottom:14px;}'
-    +'.totals .row{display:flex;gap:40px;font-size:8.5pt;color:#503f37;}'
-    +'.totals .big{font-size:11pt;font-weight:800;color:#1e1e1e;}'
+    +'.recipient{margin-bottom:14px;}.recipient .name{font-size:11pt;font-weight:800;margin-bottom:3px;}.recipient div{font-size:8.5pt;color:#503f37;line-height:1.6;}'
+    +'table{width:100%;border-collapse:collapse;margin-bottom:10px;}th{background:#503f37;color:#DACBBC;font-size:7.5pt;font-weight:800;padding:5px 7px;text-align:left;}td{padding:5px 7px;font-size:8.5pt;border-bottom:1px solid #e8e0d6;}tr:nth-child(even) td{background:#f5f0ea;}'
+    +'.totals{background:#DAC9B8;padding:10px 14px;border-radius:6px;display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-bottom:14px;}.totals .row{display:flex;gap:40px;font-size:8.5pt;color:#503f37;}.totals .big{font-size:11pt;font-weight:800;color:#1e1e1e;}'
     +'.note{font-size:8pt;color:#837261;font-style:italic;margin-bottom:14px;}'
-    +'.sigs{display:flex;justify-content:space-between;margin-top:24px;}'
-    +'.sig{border-top:1px solid #b0a090;padding-top:4px;width:44%;font-size:7.5pt;color:#837261;}'
-    +'.footer{position:fixed;bottom:8mm;left:14mm;right:14mm;background:#503f37;color:#DACBBC;text-align:center;font-size:7pt;padding:5px;}'
-    +'@media print{.footer{position:fixed;}}'
+    +'.sigs{display:flex;justify-content:space-between;margin-top:24px;}.sig{border-top:1px solid #b0a090;padding-top:4px;width:44%;font-size:7.5pt;color:#837261;}'
+    +'.footer{position:fixed;bottom:8mm;left:14mm;right:14mm;background:#503f37;color:#DACBBC;text-align:center;font-size:7pt;padding:5px;}@media print{.footer{position:fixed;}}'
     +'</style></head><body>'
     +'<div class="header"><h1>DIVOKÉ FARMY — DODACÍ LIST</h1>'
     +'<div style="text-align:right"><div style="font-size:10pt;font-weight:800">'+m.dlNum+'</div><small>'+m.datum+'</small></div></div>'
     +'<div class="recipient"><div class="section-label">Příjemce</div>'
     +'<div class="name">'+m.cust.name+'</div>'+info+'</div>'
     +'<table><thead><tr><th>Produkt</th><th>Objem</th><th style="text-align:center">Ks</th><th style="text-align:center">Váha (kg)</th><th style="text-align:right">Cena/jedn.</th><th style="text-align:right">Celkem</th></tr></thead><tbody>'+rows+'</tbody></table>'
-    +'<div class="totals">'
-    +'<div class="row"><span>Celkem bez DPH:</span><span>'+m.tb.toFixed(2)+' Kč</span></div>'
+    +'<div class="totals"><div class="row"><span>Celkem bez DPH:</span><span>'+m.tb.toFixed(2)+' Kč</span></div>'
     +'<div class="row"><span>DPH 12 %:</span><span>'+(m.tb*VAT).toFixed(2)+' Kč</span></div>'
-    +'<div class="row big"><span>CELKEM S DPH:</span><span>'+(m.tb*(1+VAT)).toFixed(2)+' Kč</span></div>'
-    +'</div>'
+    +'<div class="row big"><span>CELKEM S DPH:</span><span>'+(m.tb*(1+VAT)).toFixed(2)+' Kč</span></div></div>'
     +(m.note?'<div class="note">Poznámka: '+m.note+'</div>':'')
     +'<div class="sigs"><div class="sig">Podpis odesílatele</div><div class="sig">Podpis příjemce</div></div>'
     +'<div class="footer">DF obchodní s.r.o. &nbsp;|&nbsp; IČO: 29279313 &nbsp;|&nbsp; Šebrov 195, 679 22 Lipůvka &nbsp;|&nbsp; divokefarmy.cz</div>'
     +'</body></html>';
+}
+
+function stahnoutDL(){
+  if(!_dlItems.length){alert('Žádné položky.');return;}
+  var m=_getDLMeta();
+  var html=_buildDLHtml(m,_dlItems,_dlOrder&&_dlOrder.address?_dlOrder.address:null);
   var blob=new Blob([html],{type:'text/html'});
   var blobUrl=URL.createObjectURL(blob);
   var win=window.open(blobUrl,'_blank','width=850,height=1100');
@@ -2070,6 +2062,20 @@ function tiskniUlozeneDLPDF(idx){
   var win=window.open(blobUrl,'_blank','width=850,height=1100');
   win.focus();
   setTimeout(function(){ win.print(); URL.revokeObjectURL(blobUrl); },500);
+}
+
+function stahnoutDLSoubor(){
+  if(!_dlItems.length){alert('Žádné položky.');return;}
+  var m=_getDLMeta();
+  var html=_buildDLHtml(m,_dlItems);
+  var pdfName='DL_'+m.cust.name.replace(/\s+/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.html';
+  var blob=new Blob([html],{type:'text/html'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=pdfName;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1000);
 }
 
 function odeslatDL(){
