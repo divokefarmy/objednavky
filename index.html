@@ -2164,7 +2164,7 @@ function renderDodaciListy(){
     var deliveryDateStr=dl.delivery_date?new Date(dl.delivery_date+'T12:00:00').toLocaleDateString('cs-CZ'):'';
     html+='<div class="order-card'+(isArch?' storno-card':'')+(isVyrizena?' dl-card-vyrizena':'')+'" id="dlc'+idx+'">'
       +'<div class="order-hd" onclick="this.nextElementSibling.classList.toggle(\'show\')">'
-      +'<span class="order-date">'+d+(deliveryDateStr?'<br><span style="font-size:10px;color:#4a7a30;font-weight:700">→ '+deliveryDateStr+'</span>':'')+'</span>'
+      +'<span class="order-date">'+(deliveryDateStr?deliveryDateStr:d)+'</span>'
       +'<span class="order-name">'+(dl.customer_name||'')+(dl.company?'<br><small style="font-size:11px;font-weight:500;opacity:.65">'+dl.company+'</small>':'')+'</span>'
       +'<span class="order-total">'+(dl.total_without_vat||0).toFixed(2)+' Kč</span>'
       +statusBadge
