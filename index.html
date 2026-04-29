@@ -1320,7 +1320,7 @@ function setOrderStatus(id,idx,status){
   var stLabel={nova:'Nová',vyrizuje_se:'Vyřizuje se',vyrizena:'Vyřízena',storno:'Storno',archivovana:'Archivováno'};
   var stCls={nova:'st-nova',vyrizuje_se:'st-vyrizuje',vyrizena:'st-vyrizena',storno:'st-storno',archivovana:'st-archivovana'};
   _db.from('orders').update({status:status}).eq('id',id).then(function(res){
-    if(res.error){ alert('Chyba: '+res.error.message); return; }
+    if(res.error){ alert('Chyba při ukládání stavu: '+res.error.message+'\n\nSpusť v Supabase SQL Editor:\nCREATE POLICY "admin_update_orders" ON orders FOR UPDATE TO authenticated USING (true) WITH CHECK (true);'); return; }
     _orders[idx].status=status;
     var lbl=document.getElementById('ostlbl'+idx);
     if(lbl){ lbl.textContent=stLabel[status]; lbl.className='order-status '+(stCls[status]||'st-nova'); }
