@@ -1,0 +1,60 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate js/config.js from secrets
+        env:
+          SUPABASE_URL:        ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY:   ${{ secrets.SUPABASE_ANON_KEY }}
+          EMAILJS_PUBLIC_KEY:  ${{ secrets.EMAILJS_PUBLIC_KEY }}
+          EMAILJS_SERVICE_ID:  ${{ secrets.EMAILJS_SERVICE_ID }}
+          EMAILJS_TEMPLATE_ID: ${{ secrets.EMAILJS_TEMPLATE_ID }}
+          ADMIN_PW:            ${{ secrets.ADMIN_PW }}
+          EMAIL_TO:            ${{ vars.EMAIL_TO || 'adam@divokefarmy.cz' }}
+        run: |
+          node -e '
+            const fs = require("fs");
+            const cfg = {
+              SUPABASE_URL:        process.env.SUPABASE_URL,
+              SUPABASE_ANON_KEY:   process.env.SUPABASE_ANON_KEY,
+              EMAILJS_PUBLIC_KEY:  process.env.EMAILJS_PUBLIC_KEY,
+              EMAILJS_SERVICE_ID:  process.env.EMAILJS_SERVICE_ID,
+              EMAILJS_TEMPLATE_ID: process.env.EMAILJS_TEMPLATE_ID,
+              ADMIN_PW:            process.env.ADMIN_PW,
+              EMAIL_TO:            process.env.EMAIL_TO,
+            };
+            for (const [k, v] of Object.entries(cfg)) {
+              if (!v) { console.error("Missing secret/var: " + k); process.exit(1); }
+            }
+            fs.writeFileSync("js/config.js", "window.DF_CONFIG = " + JSON.stringify(cfg, null, 2) + ";\n");
+          '
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
