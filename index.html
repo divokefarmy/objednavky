@@ -301,7 +301,12 @@
 
   <div id="confirm-modal">
     <div class="confirm-card">
-      <div class="confirm-icon">✓</div>
+      <div class="confirm-icon" aria-hidden="true">
+        <svg class="confirm-check" viewBox="0 0 56 56" width="56" height="56">
+          <circle class="ck-circle" cx="28" cy="28" r="24" fill="none" stroke="#503f37" stroke-width="2"/>
+          <path class="ck-tick" d="M16 29 L25 38 L41 19" fill="none" stroke="#503f37" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
       <div class="confirm-title">Objednávka přijata!</div>
       <div class="confirm-sub">Vaši objednávku jsme přijali.<br>Brzy se vám ozveme s potvrzením.</div>
       <div class="confirm-detail" id="confirm-detail"></div>
