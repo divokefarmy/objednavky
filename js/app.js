@@ -9,7 +9,32 @@ const VAT = 0.12;
 
 const _SUPA_URL = _CFG.SUPABASE_URL || '';
 const _SUPA_KEY = _CFG.SUPABASE_ANON_KEY || '';
-const _db = window.supabase.createClient(_SUPA_URL, _SUPA_KEY);
+// If config is missing (local dev without backend, or CI failed to inject),
+// fall back to a stub client so the page still renders the customer form.
+// All network-dependent features (auth, orders, admin) become no-ops.
+function _makeStubDb(){
+  var noBackend = { data: null, error: { message: 'No backend configured.' } };
+  function chain(){
+    var q = {};
+    ['select','insert','update','upsert','delete','eq','order','limit','single']
+      .forEach(function(m){ q[m] = function(){ return q; }; });
+    q.then = function(cb){ cb(noBackend); return { catch: function(){} }; };
+    return q;
+  }
+  return {
+    from: function(){ return chain(); },
+    auth: {
+      getUser: function(){ return Promise.resolve({ data: { user: null }, error: null }); },
+      onAuthStateChange: function(){ return { data: { subscription: { unsubscribe: function(){} } } }; },
+      signInWithPassword: function(){ return Promise.resolve(noBackend); },
+      signUp: function(){ return Promise.resolve(noBackend); },
+      signOut: function(){ return Promise.resolve({ error: null }); }
+    }
+  };
+}
+const _db = (_SUPA_URL && _SUPA_KEY)
+  ? window.supabase.createClient(_SUPA_URL, _SUPA_KEY)
+  : (console.warn('[df] No Supabase config — running in offline stub mode.'), _makeStubDb());
 
 const EJS_KEY      = _CFG.EMAILJS_PUBLIC_KEY || '';
 const EJS_SERVICE  = _CFG.EMAILJS_SERVICE_ID || '';
