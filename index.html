@@ -10,7 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -226,7 +226,9 @@
             <path d="M0,0C176.951,-2.823 358.056,-2.846 535.006,0C358.055,2.846 176.951,2.823 0,0" style="fill:#ddd5c0;fill-rule:nonzero;"/>
         </g>
     </g>
-</svg></div>
+</svg>
+      <div class="hero-tag">Velkoobchodní objednávkový formulář</div>
+    </div>
     <div class="topbar-r">
       <div class="topbar-date" id="dnes"></div>
       <div style="display:flex;gap:8px;align-items:center;">
@@ -268,28 +270,32 @@
     <span class="forget-link" id="forget-link" style="display:none" onclick="forgetMe()">Zapomenout</span>
   </div>
 
-  <div class="slabel">Výběr produktů</div>
-  <div id="pc"></div>
-
-  <div class="pnote">* Skutečná cena bude upřesněna dle skutečné váhy váženého zboží. Ceny jsou bez DPH (12 %).</div>
-
-  <div class="summary">
-    <div class="sum-hd">Souhrn objednávky</div>
-    <div id="sb"><div class="sum-empty">Zatím nebyl vybrán žádný produkt.</div></div>
-    <div class="sum-total"><span class="lbl">Celkem bez DPH</span><span class="val" id="tv">0 Kč</span></div>
-    <div class="sum-sub" id="tsdph" style="margin-top:5px;color:var(--t3);font-size:14px;justify-content:flex-end;gap:18px;"></div>
+  <div class="layout">
+    <div class="layout-main">
+      <div class="slabel">Výběr produktů</div>
+      <div id="cat-nav" class="cat-nav"></div>
+      <div id="pc"></div>
+      <div class="pnote">* Skutečná cena bude upřesněna dle skutečné váhy váženého zboží. Ceny jsou bez DPH (12 %).</div>
+    </div>
+    <aside class="layout-rail">
+      <div class="rail-sticky">
+        <div class="summary">
+          <div class="sum-hd">Souhrn objednávky</div>
+          <div id="sb"><div class="sum-empty">Zatím nebyl vybrán žádný produkt.</div></div>
+          <div class="sum-total"><span class="lbl">Celkem bez DPH</span><span class="val" id="tv">0 Kč</span></div>
+          <div class="sum-sub" id="tsdph" style="margin-top:5px;color:var(--t3);font-size:14px;justify-content:flex-end;gap:18px;"></div>
+        </div>
+        <div class="field rail-note">
+          <label>Poznámka k objednávce</label>
+          <textarea id="poz" placeholder="Termín dodání, speciální požadavky, způsob odběru…"></textarea>
+        </div>
+        <div class="btn-row">
+          <button class="send-btn" onclick="potvrditObjednavku()">Potvrdit objednávku →</button>
+          <button class="pdf-btn" onclick="generatePDF()">Stáhnout PDF</button>
+        </div>
+      </div>
+    </aside>
   </div>
-
-  <div class="field" style="margin-bottom:20px;">
-    <label>Poznámka k objednávce</label>
-    <textarea id="poz" placeholder="Termín dodání, speciální požadavky, způsob odběru…"></textarea>
-  </div>
-
-  <div class="btn-row">
-    <button class="send-btn" onclick="potvrditObjednavku()">Potvrdit objednávku →</button>
-    <button class="pdf-btn" onclick="generatePDF()">Stáhnout PDF</button>
-  </div>
-
 
   <div id="float-bar">
     <div class="float-left">
@@ -301,7 +307,12 @@
 
   <div id="confirm-modal">
     <div class="confirm-card">
-      <div class="confirm-icon">✓</div>
+      <div class="confirm-icon" aria-hidden="true">
+        <svg class="confirm-check" viewBox="0 0 56 56" width="56" height="56">
+          <circle class="ck-circle" cx="28" cy="28" r="24" fill="none" stroke="#503f37" stroke-width="2"/>
+          <path class="ck-tick" d="M16 29 L25 38 L41 19" fill="none" stroke="#503f37" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
       <div class="confirm-title">Objednávka přijata!</div>
       <div class="confirm-sub">Vaši objednávku jsme přijali.<br>Brzy se vám ozveme s potvrzením.</div>
       <div class="confirm-detail" id="confirm-detail"></div>

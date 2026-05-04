@@ -131,10 +131,12 @@ function buildAll(){
   P.forEach(function(p,i){ if(!deleted[i]&&!archived[i]&&cats.indexOf(p.cat)<0) cats.push(p.cat); });
   var cont = document.getElementById('pc');
   cont.innerHTML = '';
+  var renderedCats = [];
   cats.forEach(function(cat){
     var prods = P.map(function(p,i){ return Object.assign({},p,{idx:i}); })
       .filter(function(p){ return p.cat===cat && !deleted[p.idx] && !archived[p.idx]; });
     if(!prods.length) return;
+    renderedCats.push(cat);
     prods.sort(function(a,b){
       var aOk=avail[a.idx]?0:1, bOk=avail[b.idx]?0:1;
       if(aOk!==bOk) return aOk-bOk;
@@ -177,6 +179,54 @@ function buildAll(){
     cont.appendChild(block);
   });
   recalc();
+  _buildCatNav(renderedCats);
+  _watchCatScroll();
+}
+
+function _buildCatNav(cats){
+  var nav = document.getElementById('cat-nav');
+  if(!nav) return;
+  nav.innerHTML = cats.map(function(c, i){
+    return '<button class="cat-nav-tab" type="button" onclick="_jumpToCat('+i+')">'+_he(c)+'</button>';
+  }).join('');
+}
+
+function _jumpToCat(i){
+  var blocks = document.querySelectorAll('#pc > .cat-block');
+  var b = blocks[i];
+  if(!b) return;
+  var navH = (document.getElementById('cat-nav')||{}).offsetHeight || 0;
+  var top = b.getBoundingClientRect().top + window.scrollY - navH - 12;
+  window.scrollTo({ top: top, behavior: 'smooth' });
+}
+
+function _watchCatScroll(){
+  var blocks = document.querySelectorAll('#pc > .cat-block');
+  var tabs = document.querySelectorAll('.cat-nav-tab');
+  if(!blocks.length || !tabs.length) return;
+  var pending = false;
+  function update(){
+    pending = false;
+    var navH = (document.getElementById('cat-nav')||{}).offsetHeight || 0;
+    var y = window.scrollY + navH + 24;
+    var activeIdx = 0;
+    for(var i=0;i<blocks.length;i++){
+      if(blocks[i].offsetTop <= y) activeIdx = i; else break;
+    }
+    for(var j=0;j<tabs.length;j++){
+      if(j===activeIdx) tabs[j].classList.add('active');
+      else tabs[j].classList.remove('active');
+    }
+  }
+  function onScroll(){
+    if(pending) return;
+    pending = true;
+    requestAnimationFrame(update);
+  }
+  if(window._dfCatScrollHandler) window.removeEventListener('scroll', window._dfCatScrollHandler);
+  window._dfCatScrollHandler = onScroll;
+  window.addEventListener('scroll', onScroll, { passive: true });
+  update();
 }
 
 function recalc(){
