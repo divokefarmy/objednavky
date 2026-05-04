@@ -4,7 +4,6 @@
 // GitHub Actions workflow from repository secrets). For local development copy
 // `js/config.example.js` to `js/config.js` and fill in the values.
 const _CFG = (window.DF_CONFIG || {});
-const ADMIN_PW = _CFG.ADMIN_PW || '';
 const EMAIL_TO = _CFG.EMAIL_TO || 'adam@divokefarmy.cz';
 const VAT = 0.12;
 
@@ -348,96 +347,22 @@ function showPdfNotice(){
 }
 
 // PASSWORD
-function openPw(){
-  document.getElementById('pw-inp').value='';
-  document.getElementById('pw-err').textContent='';
-  document.getElementById('pw-screen').className='show';
-  _initTouchIDBtn();
-  setTimeout(function(){ document.getElementById('pw-inp').focus(); },80);
+// ── Admin access (Supabase Auth + RLS) ──
+// The UI gate below is UX only. Real protection lives in Supabase RLS:
+// the `is_admin()` policies refuse non-admin writes even if a user opens
+// the admin overlay via DevTools. See supabase/migrations/01_admin_rls.sql.
+var _adminPendingOpen = false;
+function _isAdmin(){
+  return !!(_user && _user.app_metadata && _user.app_metadata.role === 'admin');
 }
-function closePw(){ document.getElementById('pw-screen').className=''; }
-function checkPw(){
-  if(document.getElementById('pw-inp').value===ADMIN_PW){
-    closePw(); openAdmin();
-    _offerTouchIDSetup();
-  } else {
-    document.getElementById('pw-err').textContent='Nesprávné heslo.';
-    document.getElementById('pw-inp').value='';
+function requestAdminAccess(){
+  if(_isAdmin()){ openAdmin(); return; }
+  if(_user){
+    alert('Tento účet nemá administrátorská oprávnění.\nPřihlaste se prosím účtem správce.');
+    return;
   }
-}
-document.getElementById('pw-inp').addEventListener('keydown',function(e){ if(e.key==='Enter') checkPw(); });
-
-// ── Touch ID (WebAuthn) ──
-function _tidAvail(){
-  return !!(window.PublicKeyCredential && window.isSecureContext);
-}
-function _tidCredId(){
-  try{ return localStorage.getItem('df_tid_cred')||null; }catch(e){ return null; }
-}
-function _initTouchIDBtn(){
-  var btn=document.getElementById('touchid-btn');
-  var div=document.getElementById('pw-divider');
-  if(!btn) return;
-  btn.disabled=false; btn.textContent='🔒 Přihlásit přes Touch ID';
-  if(_tidAvail() && _tidCredId()){
-    btn.style.display='block'; div.style.display='flex';
-    document.getElementById('pw-sub').textContent='Touch ID nebo heslo';
-  } else {
-    btn.style.display='none'; div.style.display='none';
-    document.getElementById('pw-sub').textContent='Zadejte administrátorské heslo';
-  }
-}
-async function tryTouchID(){
-  var credId=_tidCredId(); if(!credId) return;
-  var btn=document.getElementById('touchid-btn');
-  btn.disabled=true; btn.textContent='Ověřuji…';
-  try{
-    var challenge=new Uint8Array(32); crypto.getRandomValues(challenge);
-    var rawId=Uint8Array.from(atob(credId),function(c){return c.charCodeAt(0);});
-    var result=await navigator.credentials.get({publicKey:{
-      challenge:challenge,
-      allowCredentials:[{type:'public-key',id:rawId,transports:['internal']}],
-      userVerification:'required',timeout:30000
-    }});
-    if(result){ closePw(); openAdmin(); }
-  }catch(e){
-    btn.disabled=false; btn.textContent='🔒 Přihlásit přes Touch ID';
-    if(e.name!=='NotAllowedError'){
-      document.getElementById('pw-err').textContent='Touch ID se nezdařilo, použijte heslo.';
-    }
-  }
-}
-async function _offerTouchIDSetup(){
-  if(!_tidAvail()||_tidCredId()) return;
-  var ok=await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(function(){return false;});
-  if(!ok) return;
-  setTimeout(function(){
-    var want=confirm('Chcete nastavit přihlášení přes Touch ID pro příště?');
-    if(!want) return;
-    _setupTouchID();
-  },400);
-}
-async function _setupTouchID(){
-  try{
-    var challenge=new Uint8Array(32); crypto.getRandomValues(challenge);
-    var cred=await navigator.credentials.create({publicKey:{
-      challenge:challenge,
-      rp:{name:'Divoké Farmy Admin',id:location.hostname},
-      user:{id:new TextEncoder().encode('df-admin'),name:'admin',displayName:'Správce'},
-      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
-      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
-      timeout:30000
-    }});
-    var b64=btoa(String.fromCharCode.apply(null,new Uint8Array(cred.rawId)));
-    localStorage.setItem('df_tid_cred',b64);
-    alert('Touch ID nastaveno. Příště se přihlásíte otiskem prstu.');
-  }catch(e){
-    alert('Touch ID se nepodařilo nastavit: '+e.message);
-  }
-}
-function odstranitTouchID(){
-  localStorage.removeItem('df_tid_cred');
-  alert('Touch ID odstraněno. Přihlášení bude vyžadovat heslo.');
+  _adminPendingOpen = true;
+  openAuthModal('login');
 }
 
 // ── ADMIN ──
@@ -1429,11 +1354,18 @@ function _onAuthChange(user){
   var guest = document.getElementById('auth-bar-guest');
   var loggedIn = document.getElementById('auth-bar-user');
   var lbl = document.getElementById('auth-email-lbl');
+  var adminLink = document.getElementById('auth-admin-link');
   if(user){
     if(guest) guest.style.display='none';
     if(loggedIn) loggedIn.style.display='flex';
     if(lbl) lbl.textContent = user.email;
+    if(adminLink) adminLink.style.display = _isAdmin() ? 'inline' : 'none';
     _prefillFromLastOrder(user.id);
+    if(_adminPendingOpen){
+      _adminPendingOpen = false;
+      if(_isAdmin()) openAdmin();
+      else alert('Tento účet nemá administrátorská oprávnění.');
+    }
   } else {
     if(guest) guest.style.display='flex';
     if(loggedIn) loggedIn.style.display='none';
