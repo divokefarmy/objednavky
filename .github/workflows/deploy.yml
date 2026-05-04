@@ -30,7 +30,6 @@ jobs:
           EMAILJS_PUBLIC_KEY:  ${{ secrets.EMAILJS_PUBLIC_KEY }}
           EMAILJS_SERVICE_ID:  ${{ secrets.EMAILJS_SERVICE_ID }}
           EMAILJS_TEMPLATE_ID: ${{ secrets.EMAILJS_TEMPLATE_ID }}
-          ADMIN_PW:            ${{ secrets.ADMIN_PW }}
           EMAIL_TO:            ${{ vars.EMAIL_TO || 'adam@divokefarmy.cz' }}
         run: |
           node -e '
@@ -41,7 +40,6 @@ jobs:
               EMAILJS_PUBLIC_KEY:  process.env.EMAILJS_PUBLIC_KEY,
               EMAILJS_SERVICE_ID:  process.env.EMAILJS_SERVICE_ID,
               EMAILJS_TEMPLATE_ID: process.env.EMAILJS_TEMPLATE_ID,
-              ADMIN_PW:            process.env.ADMIN_PW,
               EMAIL_TO:            process.env.EMAIL_TO,
             };
             for (const [k, v] of Object.entries(cfg)) {
