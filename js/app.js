@@ -997,8 +997,9 @@ function dlAdresarSearch(val){
   var matches=_contacts.filter(function(c){ return c.name.toLowerCase().indexOf(q)>=0||(c.company||'').toLowerCase().indexOf(q)>=0; });
   if(!matches.length){ drop.style.display='none'; drop.innerHTML=''; return; }
   drop.style.display='block';
-  drop.innerHTML=matches.map(function(c,i){
-    return '<div class="dl-adresar-item" onmousedown="dlVyplnitKontakt('+i+')">'
+  drop.innerHTML=matches.map(function(c){
+    var origIdx=_contacts.indexOf(c);
+    return '<div class="dl-adresar-item" onmousedown="dlVyplnitKontakt('+origIdx+')">'
       +'<strong>'+c.name+'</strong>'+(c.company?' <span style="opacity:.7">· '+c.company+'</span>':'')+(c.ico?' <span style="opacity:.5;font-size:11px">IČO: '+c.ico+'</span>':'')
       +'</div>';
   }).join('');
