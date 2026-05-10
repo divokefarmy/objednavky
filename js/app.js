@@ -758,10 +758,12 @@ function toggleAddForm(){
   if(f.classList.contains('show')){
     document.getElementById('anew-name').focus();
   } else {
-    ['anew-name','anew-voc','anew-baleni','anew-sklad','anew-trv'].forEach(function(id){
+    ['anew-name','anew-voc','anew-baleni','anew-sklad','anew-trv','anew-voc-kg'].forEach(function(id){
       var el=document.getElementById(id);if(el)el.value='';
     });
     document.getElementById('anew-cat').value='';
+    var vahyEl=document.getElementById('anew-vahy');if(vahyEl)vahyEl.checked=false;
+    var kgRow=document.getElementById('anew-voc-kg-row');if(kgRow)kgRow.style.display='none';
   }
 }
 function addProd(){
@@ -771,8 +773,11 @@ function addProd(){
   var baleni=document.getElementById('anew-baleni').value.trim();
   var sklad=document.getElementById('anew-sklad').value.trim();
   var trv=document.getElementById('anew-trv').value.trim();
+  var vahyEl=document.getElementById('anew-vahy');
+  var vahy=vahyEl?vahyEl.checked:false;
+  var voc_kg=parseFloat(document.getElementById('anew-voc-kg').value)||0;
   if(!name||!cat||!voc){alert('Vyplňte prosím název, kategorii a cenu.');return;}
-  var np={cat:cat,name:name,baleni:baleni,sklad:sklad||'lednice',trv:trv,voc:voc,ok:true,_custom:true};
+  var np={cat:cat,name:name,baleni:baleni,sklad:sklad||'lednice',trv:trv,voc:voc,ok:true,_custom:true,vahy:vahy,voc_kg:voc_kg};
   P.push(np);
   customProds.push(np);
   avail[P.length-1]=true;
