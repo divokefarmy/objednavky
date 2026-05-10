@@ -69,6 +69,8 @@
           <div class="adm-af"><label>Balení / Objem</label><input id="anew-baleni" placeholder="např. 200 g"></div>
           <div class="adm-af"><label>Skladování</label><input id="anew-sklad" placeholder="např. lednice"></div>
           <div class="adm-af"><label>Trvanlivost</label><input id="anew-trv" placeholder="např. 4 měsíce"></div>
+          <div class="adm-af full"><label class="adm-vahy-label"><input type="checkbox" id="anew-vahy" onchange="document.getElementById('anew-voc-kg-row').style.display=this.checked?'':'none'"> Vážený produkt (fakturace dle kg)</label></div>
+          <div class="adm-af" id="anew-voc-kg-row" style="display:none"><label>VOC cena za kg (Kč/kg bez DPH)</label><input type="number" id="anew-voc-kg" placeholder="0"></div>
         </div>
         <div class="adm-add-actions">
           <button class="adm-add-confirm" onclick="addProd()">Přidat produkt</button>
