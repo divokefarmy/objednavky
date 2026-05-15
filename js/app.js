@@ -641,23 +641,8 @@ function tiskniObjednavkuPDF(idx){
 }
 
 function saveAdmin(keepOpen){
-  var customs=P.filter(function(p){return p._custom;}).map(function(p){
-    return {cat:p.cat,name:p.name,baleni:p.baleni,sklad:p.sklad,trv:p.trv,voc:p.voc,ok:p.ok};
-  });
-  try{
-    localStorage.setItem('df_av',JSON.stringify(avail));
-    localStorage.setItem('df_po',JSON.stringify(prodOverrides));
-    localStorage.setItem('df_arch',JSON.stringify(archived));
-    localStorage.setItem('df_del',JSON.stringify(deleted));
-    localStorage.setItem('df_cp',JSON.stringify(customs));
-    localStorage.setItem('df_sq',JSON.stringify(stockQty));
-  }catch(e){}
-  _db.from('product_state').upsert([{
-    id:1, avail:avail, overrides:prodOverrides, archived:archived, deleted:deleted,
-    custom_prods:customs, updated_at:new Date().toISOString()
-  }]).then(function(res){ if(res.error) console.warn('Product sync error:',res.error.message); });
+  _saveProductState();
   if(!keepOpen){ closeAdmin(); }
-  buildAll();
 }
 
 function renderAdmin(q){
@@ -712,6 +697,25 @@ function tog(i,v){
   avail[i]=v;
   var el=document.getElementById('ap'+i);
   if(el){el.textContent=v?'Skladem':'Nedostupné';el.className='apill '+(v?'ap-ok':'ap-no');}
+  _saveProductState();
+}
+function _saveProductState(){
+  var customs=P.filter(function(p){return p._custom;}).map(function(p){
+    return {cat:p.cat,name:p.name,baleni:p.baleni,sklad:p.sklad,trv:p.trv,voc:p.voc,ok:p.ok};
+  });
+  try{
+    localStorage.setItem('df_av',JSON.stringify(avail));
+    localStorage.setItem('df_po',JSON.stringify(prodOverrides));
+    localStorage.setItem('df_arch',JSON.stringify(archived));
+    localStorage.setItem('df_del',JSON.stringify(deleted));
+    localStorage.setItem('df_cp',JSON.stringify(customs));
+    localStorage.setItem('df_sq',JSON.stringify(stockQty));
+  }catch(e){}
+  _db.from('product_state').upsert([{
+    id:1, avail:avail, overrides:prodOverrides, archived:archived, deleted:deleted,
+    custom_prods:customs, updated_at:new Date().toISOString()
+  }]).then(function(res){ if(res.error) console.warn('Product sync error:',res.error.message); });
+  buildAll();
 }
 function toggleEdit(i){
   var edit=document.getElementById('admedit'+i),btn=document.getElementById('admbtn'+i),row=document.getElementById('admrow'+i);
