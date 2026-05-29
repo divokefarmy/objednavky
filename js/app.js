@@ -746,15 +746,18 @@ function saveProd(i){
   var pn=document.getElementById('admpn'+i);if(pn)pn.textContent=name;
   var bl=document.getElementById('admbl'+i);if(bl)bl.textContent=baleni;
   toggleEdit(i);
+  _saveProductState();
 }
 function archiveProd(i){
   archived[i]=!archived[i];
   renderAdmin(document.getElementById('adm-srch').value);
+  _saveProductState();
 }
 function deleteProd(i){
   if(!confirm('Opravdu smazat produkt "'+P[i].name+'"? Tuto akci nelze vrátit zpět.')) return;
   deleted[i]=true;
   renderAdmin(document.getElementById('adm-srch').value);
+  _saveProductState();
 }
 function toggleAddForm(){
   var f=document.getElementById('adm-add-form');
