@@ -942,7 +942,7 @@ function _renderDLCatGrid(){
       +'<div class="dl-prod-card-price">'+priceHtml+'</div>'
       +'<div class="dl-prod-qty-row">'
         +'<button onclick="dlCatQty('+p.idx+',-1)">−</button>'
-        +'<input type="number" min="0" value="'+q+'" id="dlcq'+p.idx+'" oninput="_dlCatQty['+p.idx+']=parseInt(this.value)||0;dlCatHighlight('+p.idx+')">'
+        +'<input type="number" value="'+q+'" id="dlcq'+p.idx+'" oninput="_dlCatQty['+p.idx+']=parseInt(this.value)||0;dlCatHighlight('+p.idx+')">'
         +'<button onclick="dlCatQty('+p.idx+',1)">+</button>'
       +'</div>';
     grid.appendChild(card);
@@ -950,7 +950,7 @@ function _renderDLCatGrid(){
 }
 
 function dlCatQty(idx,d){
-  _dlCatQty[idx]=Math.max(0,(_dlCatQty[idx]||0)+d);
+  _dlCatQty[idx]=(_dlCatQty[idx]||0)+d;
   var inp=document.getElementById('dlcq'+idx); if(inp) inp.value=_dlCatQty[idx];
   dlCatHighlight(idx);
 }
@@ -1102,25 +1102,29 @@ function renderDLItems(){
   var html='<table class="dl-items-tbl"><thead><tr><th>Produkt</th><th>Objem</th><th style="text-align:center">Ks</th><th style="text-align:center">Váha (kg)</th><th style="text-align:right">Cena/jedn.</th><th style="text-align:right">Celkem</th><th></th></tr></thead><tbody>';
   _dlItems.forEach(function(it,i){
     var tot=it.vahy ? (it.vahy_kg||0)*(it.voc_kg||0) : (it.qty||0)*(it.voc||0);
-    html+='<tr>'
+    var isVratka=(it.qty||0)<0||(it.vahy&&(it.vahy_kg||0)<0);
+    var rowStyle=isVratka?'background:#fff0f0;':'';
+    var totStyle=isVratka?'color:#c0392b;':'color:#503f37;';
+    html+='<tr style="'+rowStyle+'">'
       +'<td><input class="dl-inp" value="'+_he(it.name)+'" oninput="_dlItems['+i+'].name=this.value">'
-        +(it.vahy?'<span class="vahy-badge" style="margin-left:6px;font-size:9px">vážený</span>':'')+'</td>'
+        +(it.vahy?'<span class="vahy-badge" style="margin-left:6px;font-size:9px">vážený</span>':'')
+        +(isVratka?'<span style="margin-left:6px;font-size:9px;background:#c0392b;color:#fff;padding:1px 5px;border-radius:4px;font-weight:700">VRATKA</span>':'')+'</td>'
       +'<td><input class="dl-inp" value="'+_he(it.baleni||'')+'" oninput="_dlItems['+i+'].baleni=this.value" style="width:72px"></td>'
       +'<td style="text-align:center">'
         +'<div style="display:flex;align-items:center;justify-content:center;gap:4px">'
-          +'<button onclick="_dlItems['+i+'].qty=Math.max(0,(_dlItems['+i+'].qty||0)-1);renderDLItems()" style="width:32px;height:32px;border-radius:8px;border:none;background:#503f37;color:#DACBBC;font-size:18px;font-weight:800;cursor:pointer;line-height:1;font-family:Inter,sans-serif">−</button>'
-          +'<input class="dl-qty" type="number" min="0" value="'+(it.qty||0)+'" oninput="_dlItems['+i+'].qty=parseInt(this.value)||0;recalcDL()" style="width:46px">'
+          +'<button onclick="_dlItems['+i+'].qty=(_dlItems['+i+'].qty||0)-1;renderDLItems()" style="width:32px;height:32px;border-radius:8px;border:none;background:#503f37;color:#DACBBC;font-size:18px;font-weight:800;cursor:pointer;line-height:1;font-family:Inter,sans-serif">−</button>'
+          +'<input class="dl-qty" type="number" value="'+(it.qty||0)+'" oninput="_dlItems['+i+'].qty=parseInt(this.value)||0;recalcDL()" style="width:46px">'
           +'<button onclick="_dlItems['+i+'].qty=(_dlItems['+i+'].qty||0)+1;renderDLItems()" style="width:32px;height:32px;border-radius:8px;border:none;background:#503f37;color:#DACBBC;font-size:18px;font-weight:800;cursor:pointer;line-height:1;font-family:Inter,sans-serif">+</button>'
         +'</div>'
         +(it.vahy&&(it.vahy_kg||0)>0?'<div style="font-size:10px;color:#4a7a30;font-weight:700;margin-top:2px">'+(it.vahy_kg||0).toFixed(3)+' kg</div>':'')
       +'</td>'
       +'<td style="text-align:center">'+(it.vahy
-        ? '<input class="dl-qty" type="number" min="0" step="0.01" value="'+(it.vahy_kg||0)+'" oninput="_dlItems['+i+'].vahy_kg=parseFloat(this.value)||0;recalcDL()" style="width:70px">'
+        ? '<input class="dl-qty" type="number" step="0.01" value="'+(it.vahy_kg||0)+'" oninput="_dlItems['+i+'].vahy_kg=parseFloat(this.value)||0;recalcDL()" style="width:70px">'
         : '<span style="color:#ccc;font-size:12px">—</span>')+'</td>'
       +'<td style="text-align:right">'+(it.vahy
-        ? '<input class="dl-price" type="number" min="0" value="'+(it.voc_kg||0)+'" oninput="_dlItems['+i+'].voc_kg=parseFloat(this.value)||0;recalcDL()"> Kč/kg'
-        : '<input class="dl-price" type="number" min="0" value="'+(it.voc||0)+'" oninput="_dlItems['+i+'].voc=parseFloat(this.value)||0;recalcDL()"> Kč/ks')+'</td>'
-      +'<td style="text-align:right;font-weight:800;color:#503f37;white-space:nowrap" id="dlr'+i+'">'+tot.toFixed(2)+' Kč</td>'
+        ? '<input class="dl-price" type="number" value="'+(it.voc_kg||0)+'" oninput="_dlItems['+i+'].voc_kg=parseFloat(this.value)||0;recalcDL()"> Kč/kg'
+        : '<input class="dl-price" type="number" value="'+(it.voc||0)+'" oninput="_dlItems['+i+'].voc=parseFloat(this.value)||0;recalcDL()"> Kč/ks')+'</td>'
+      +'<td style="text-align:right;font-weight:800;white-space:nowrap;'+totStyle+'" id="dlr'+i+'">'+tot.toFixed(2)+' Kč</td>'
       +'<td><button class="dl-del" onclick="removeDLItem('+i+')">✕</button></td>'
       +'</tr>';
   });
@@ -1133,9 +1137,11 @@ function recalcDL(){
   var total=0;
   _dlItems.forEach(function(it,i){
     var val=it.vahy ? (it.vahy_kg||0)*(it.voc_kg||0) : (it.qty||0)*(it.voc||0); total+=val;
-    var el=document.getElementById('dlr'+i); if(el) el.textContent=val.toFixed(2)+' Kč';
+    var el=document.getElementById('dlr'+i);
+    if(el){ el.textContent=val.toFixed(2)+' Kč'; el.style.color=val<0?'#c0392b':'#503f37'; }
   });
-  document.getElementById('dl-total-val').textContent=fmt(total);
+  var totalEl=document.getElementById('dl-total-val');
+  if(totalEl){ totalEl.textContent=fmt(total); totalEl.style.color=total<0?'#c0392b':''; }
 }
 
 function removeDLItem(i){ _dlItems.splice(i,1); renderDLItems(); }
@@ -1170,13 +1176,18 @@ function _buildDLHtml(m, items, orderAddr){
   var rows='';
   items.forEach(function(it){
     var tot=it.vahy?(it.vahy_kg||0)*(it.voc_kg||0):(it.qty||0)*(it.voc||0);
-    rows+='<tr>'
-      +'<td>'+it.name+(it.vahy?' <span style="font-size:10px;color:#4a7a30">⚖ vážený</span>':'')+'</td>'
+    var isVratka=(it.qty||0)<0||(it.vahy&&(it.vahy_kg||0)<0);
+    var rowBg=isVratka?'background:#fff0f0;':'';
+    var totColor=isVratka?'color:#c0392b;':'';
+    rows+='<tr style="'+rowBg+'">'
+      +'<td>'+it.name
+        +(it.vahy?' <span style="font-size:10px;color:#4a7a30">⚖ vážený</span>':'')
+        +(isVratka?' <span style="font-size:9px;background:#c0392b;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">VRATKA</span>':'')+'</td>'
       +'<td>'+(it.baleni||'—')+'</td>'
       +'<td style="text-align:center">'+(it.qty||0)+' ks</td>'
       +'<td style="text-align:center">'+(it.vahy?(it.vahy_kg||0).toFixed(3)+' kg':'—')+'</td>'
       +'<td style="text-align:right">'+(it.vahy?(it.voc_kg||0).toFixed(2)+' Kč/kg':(it.voc||0).toFixed(2)+' Kč/ks')+'</td>'
-      +'<td style="text-align:right;font-weight:800">'+tot.toFixed(2)+' Kč</td>'
+      +'<td style="text-align:right;font-weight:800;'+totColor+'">'+tot.toFixed(2)+' Kč</td>'
       +'</tr>';
   });
   var info='';
@@ -1234,13 +1245,18 @@ function tiskniUlozeneDLPDF(idx){
   var rows='';
   items.forEach(function(it){
     var tot=it.vahy?(it.vahy_kg||0)*(it.voc_kg||0):(it.qty||0)*(it.voc||0);
-    rows+='<tr>'
-      +'<td>'+it.name+(it.vahy?' <span style="font-size:10px;color:#4a7a30">⚖ vážený</span>':'')+'</td>'
+    var isVratka=(it.qty||0)<0||(it.vahy&&(it.vahy_kg||0)<0);
+    var rowBg=isVratka?'background:#fff0f0;':'';
+    var totColor=isVratka?'color:#c0392b;':'';
+    rows+='<tr style="'+rowBg+'">'
+      +'<td>'+it.name
+        +(it.vahy?' <span style="font-size:10px;color:#4a7a30">⚖ vážený</span>':'')
+        +(isVratka?' <span style="font-size:9px;background:#c0392b;color:#fff;padding:1px 5px;border-radius:3px;font-weight:700">VRATKA</span>':'')+'</td>'
       +'<td>'+(it.baleni||'—')+'</td>'
       +'<td style="text-align:center">'+(it.qty||0)+' ks</td>'
       +'<td style="text-align:center">'+(it.vahy?(it.vahy_kg||0).toFixed(3)+' kg':'—')+'</td>'
       +'<td style="text-align:right">'+(it.vahy?(it.voc_kg||0).toFixed(2)+' Kč/kg':(it.voc||0).toFixed(2)+' Kč/ks')+'</td>'
-      +'<td style="text-align:right;font-weight:800">'+tot.toFixed(2)+' Kč</td>'
+      +'<td style="text-align:right;font-weight:800;'+totColor+'">'+tot.toFixed(2)+' Kč</td>'
       +'</tr>';
   });
   var info='';
