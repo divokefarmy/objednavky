@@ -23,6 +23,7 @@ function _makeStubDb(){
   }
   return {
     from: function(){ return chain(); },
+    rpc: function(){ return chain(); },
     auth: {
       getUser: function(){ return Promise.resolve({ data: { user: null }, error: null }); },
       onAuthStateChange: function(){ return { data: { subscription: { unsubscribe: function(){} } } }; },
@@ -108,6 +109,36 @@ let deleted = {};
 let customProds = [];
 let stockQty = {};
 
+// ── Maso (gated category) ──
+// Lives in its own Supabase tables (not the hardcoded `P` array above)
+// specifically so it can be select-gated by RLS — `P` ships to every
+// browser regardless of permissions. See supabase/migrations/02_meat_category.sql.
+const MASO_CAT = 'Maso';
+const MASO_PERM = 'maso';
+let meatProducts = [];
+let marinades = [];
+let hasMasoAccess = false;
+let masoCartItems = [];
+
+function loadMasoData(){
+  if(!_user){ hasMasoAccess=false; meatProducts=[]; marinades=[]; buildAll(); return; }
+  if(_isAdmin()){ hasMasoAccess=true; _fetchMasoCatalog(); return; }
+  _db.from('user_category_permissions').select('enabled').eq('user_id',_user.id).eq('category',MASO_PERM).then(function(res){
+    hasMasoAccess = !!(res.data && res.data.length && res.data[0].enabled);
+    if(hasMasoAccess) _fetchMasoCatalog();
+    else { meatProducts=[]; marinades=[]; buildAll(); }
+  });
+}
+function _fetchMasoCatalog(){
+  _db.from('meat_products').select('*').eq('active',true).order('sort').then(function(res){
+    meatProducts = (!res.error && res.data) ? res.data : [];
+    buildAll();
+  });
+  _db.from('marinades').select('*').eq('active',true).order('sort').then(function(res){
+    marinades = (!res.error && res.data) ? res.data : [];
+  });
+}
+
 function _applyState(d){
   if(d.avail) Object.assign(avail, d.avail);
   if(d.overrides && Object.keys(d.overrides).length){
@@ -178,6 +209,8 @@ function buildAll(){
       +'<div class="prod-grid">'+cards+'</div>';
     cont.appendChild(block);
   });
+  renderedCats.push(MASO_CAT);
+  cont.appendChild(_buildMasoBlockEl());
   recalc();
   _buildCatNav(renderedCats);
   _watchCatScroll();
@@ -187,8 +220,196 @@ function _buildCatNav(cats){
   var nav = document.getElementById('cat-nav');
   if(!nav) return;
   nav.innerHTML = cats.map(function(c, i){
-    return '<button class="cat-nav-tab" type="button" onclick="_jumpToCat('+i+')">'+_he(c)+'</button>';
+    var locked = c===MASO_CAT && !hasMasoAccess;
+    return '<button class="cat-nav-tab'+(locked?' cat-nav-locked':'')+'" type="button" onclick="_jumpToCat('+i+')">'+(locked?'🔒 ':'')+_he(c)+'</button>';
   }).join('');
+}
+
+function _buildMasoBlockEl(){
+  var block = document.createElement('div');
+  block.className = 'cat-block';
+  if(!hasMasoAccess){
+    block.innerHTML = '<div class="cat-hd"><span class="cat-name">🔒 '+MASO_CAT+'</span></div>'
+      +'<div class="maso-locked">'
+        +'<p class="maso-locked-msg">Tato kategorie je dostupná jen se schváleným přístupem.</p>'
+        +(_user
+          ? '<p class="maso-locked-sub">Váš účet zatím nemá oprávnění ke kategorii Maso. Napište nám a domluvíme přístup.</p>'
+          : '<button class="maso-locked-btn" type="button" onclick="openAuthModal(\'register\')">Přihlásit se / registrovat</button>')
+      +'</div>';
+    return block;
+  }
+  var cards = meatProducts.map(function(p){
+    return '<div class="prod-card maso-card">'
+      +'<div class="prod-card-name">'+_he(p.name)+'</div>'
+      +(p.voc_kg>0
+        ? '<div class="prod-card-price">'+fmt(p.voc_kg)+'<span class="prod-price-per"> / kg</span></div>'
+        : '<div class="prod-card-price maso-price-tbd">Cena bude upřesněna</div>')
+      +'<button class="maso-config-btn" type="button" onclick="openMeatConfig('+p.id+')">Nastavit a přidat</button>'
+      +'</div>';
+  }).join('');
+  var cartRows = masoCartItems.map(function(it,ci){
+    return '<div class="maso-cart-row"><span class="maso-cart-rn">'+_he(it.name)+'<br><small>'+_he(_fmtMeatConfigShort(it.config))+'</small></span>'
+      +'<span class="maso-cart-rv">'+(it.priceTBD?'cena bude upřesněna':fmt(it.total))+'<button class="maso-cart-rm" type="button" onclick="removeMasoCartItem('+ci+')">✕</button></span></div>';
+  }).join('');
+  block.innerHTML = '<div class="cat-hd"><span class="cat-name">'+MASO_CAT+'</span><span class="cat-cnt">'+meatProducts.length+' produktů</span></div>'
+    +'<div class="prod-grid">'+(cards||'<p class="maso-empty">Zatím žádné produkty.</p>')+'</div>'
+    +(masoCartItems.length ? '<div class="maso-cart-list">'+cartRows+'</div>' : '');
+  return block;
+}
+
+function removeMasoCartItem(i){
+  masoCartItems.splice(i,1);
+  buildAll();
+}
+
+function _fmtMeatConfigLines(c){
+  var lines = [];
+  lines.push('Úprava: '+(c.uprava==='nalozene'?'Naložené':'Čerstvé'));
+  if(c.uprava==='nalozene' && c.marinadaName) lines.push('Marináda: '+c.marinadaName);
+  if(c.forma==='kus') lines.push('Forma: v kuse, '+c.kg+' kg');
+  else {
+    lines.push('Forma: nakrájet na plátky ('+(c.platkyRezim==='pocet'?c.pocet+' ks':c.vahaKg+' kg')+')');
+  }
+  lines.push('Vakuování: '+(c.vak?'ano':'ne'));
+  lines.push('Skladování: '+(c.sklad==='zmrazit'?'zmrazit':'čerstvé (bez mrazení)'));
+  if(c.poznamka) lines.push('Poznámka: '+c.poznamka);
+  return lines;
+}
+function _fmtMeatConfigShort(c){
+  return _fmtMeatConfigLines(c).join(' · ');
+}
+
+// ── Meat configurator modal ──
+var _mcfg = null;
+
+function _setActive(containerId, value){
+  var el = document.getElementById(containerId);
+  if(!el) return;
+  var q = el.querySelectorAll('.mcfg-opt');
+  for(var i=0;i<q.length;i++) q[i].classList.toggle('active', q[i].dataset.v===String(value));
+}
+
+function openMeatConfig(productId){
+  var p = meatProducts.filter(function(m){ return m.id===productId; })[0];
+  if(!p) return;
+  _mcfg = { productId:productId, product:p, uprava:null, marinadaId:null, marinadaName:null,
+    forma:null, kg:null, platkyRezim:null, pocet:null, vahaKg:null, vak:null, sklad:null, poznamka:'' };
+  document.getElementById('mcfg-title').textContent = p.name;
+  ['mcfg-uprava-choice','mcfg-forma-choice','mcfg-platky-switch','mcfg-vak-choice','mcfg-sklad-choice'].forEach(function(id){ _setActive(id,''); });
+  document.getElementById('mcfg-kg').value = 1;
+  document.getElementById('mcfg-pocet').value = 4;
+  document.getElementById('mcfg-vaha').value = 1;
+  document.getElementById('mcfg-poznamka').value = '';
+  document.getElementById('mcfg-step-marinada').style.display = 'none';
+  document.getElementById('mcfg-forma-kus').style.display = 'none';
+  document.getElementById('mcfg-forma-platky').style.display = 'none';
+  document.getElementById('mcfg-platky-pocet').style.display = 'none';
+  document.getElementById('mcfg-platky-vaha').style.display = 'none';
+  var sel = document.getElementById('mcfg-marinada');
+  sel.innerHTML = marinades.map(function(m){ return '<option value="'+m.id+'">'+_he(m.name)+'</option>'; }).join('');
+  document.getElementById('meat-cfg-ov').className = 'show';
+  mcfgValidate();
+}
+function closeMeatConfig(){
+  document.getElementById('meat-cfg-ov').className='';
+  _mcfg = null;
+}
+function mcfgSetUprava(v){
+  if(!_mcfg) return;
+  _mcfg.uprava = v;
+  _setActive('mcfg-uprava-choice', v);
+  document.getElementById('mcfg-step-marinada').style.display = v==='nalozene' ? 'block' : 'none';
+  if(v==='nalozene'){ var sel=document.getElementById('mcfg-marinada'); if(sel.value) mcfgSetMarinada(sel.value); }
+  else { _mcfg.marinadaId=null; _mcfg.marinadaName=null; }
+  mcfgValidate();
+}
+function mcfgSetMarinada(id){
+  if(!_mcfg) return;
+  id = parseInt(id,10);
+  var m = marinades.filter(function(x){ return x.id===id; })[0];
+  _mcfg.marinadaId = id;
+  _mcfg.marinadaName = m ? m.name : null;
+  mcfgValidate();
+}
+function mcfgSetForma(v){
+  if(!_mcfg) return;
+  _mcfg.forma = v;
+  _setActive('mcfg-forma-choice', v);
+  document.getElementById('mcfg-forma-kus').style.display = v==='kus' ? 'block' : 'none';
+  document.getElementById('mcfg-forma-platky').style.display = v==='platky' ? 'block' : 'none';
+  if(v!=='platky'){ _mcfg.platkyRezim=null; }
+  mcfgValidate();
+}
+function mcfgSetPlatkyRezim(v){
+  if(!_mcfg) return;
+  _mcfg.platkyRezim = v;
+  _setActive('mcfg-platky-switch', v);
+  document.getElementById('mcfg-platky-pocet').style.display = v==='pocet' ? 'block' : 'none';
+  document.getElementById('mcfg-platky-vaha').style.display = v==='vaha' ? 'block' : 'none';
+  mcfgValidate();
+}
+function mcfgSetVak(v){
+  if(!_mcfg) return;
+  _mcfg.vak = v;
+  _setActive('mcfg-vak-choice', v?1:0);
+  mcfgValidate();
+}
+function mcfgSetSklad(v){
+  if(!_mcfg) return;
+  _mcfg.sklad = v;
+  _setActive('mcfg-sklad-choice', v);
+  mcfgValidate();
+}
+function mcfgSync(){
+  if(!_mcfg) return;
+  var kgEl=document.getElementById('mcfg-kg'); if(kgEl) _mcfg.kg = parseFloat(kgEl.value)||0;
+  var pocetEl=document.getElementById('mcfg-pocet'); if(pocetEl) _mcfg.pocet = parseInt(pocetEl.value)||0;
+  var vahaEl=document.getElementById('mcfg-vaha'); if(vahaEl) _mcfg.vahaKg = parseFloat(vahaEl.value)||0;
+  var poznEl=document.getElementById('mcfg-poznamka'); if(poznEl) _mcfg.poznamka = poznEl.value.trim();
+}
+function _mcfgComputePrice(){
+  var vocKg = (_mcfg.product && _mcfg.product.voc_kg) || 0;
+  if(_mcfg.forma==='kus') return { total: vocKg*(_mcfg.kg||0), priceTBD:false };
+  if(_mcfg.platkyRezim==='vaha') return { total: vocKg*(_mcfg.vahaKg||0), priceTBD:false };
+  return { total:0, priceTBD:true }; // "podle počtu" plátků — cena se doladí při balení
+}
+function mcfgValidate(){
+  if(!_mcfg) return false;
+  mcfgSync();
+  var ok = !!_mcfg.uprava
+    && (_mcfg.uprava!=='nalozene' || !!_mcfg.marinadaId)
+    && !!_mcfg.forma
+    && (_mcfg.forma!=='kus' || _mcfg.kg>0)
+    && (_mcfg.forma!=='platky' || (!!_mcfg.platkyRezim && ((_mcfg.platkyRezim==='pocet'&&_mcfg.pocet>0)||(_mcfg.platkyRezim==='vaha'&&_mcfg.vahaKg>0))))
+    && (_mcfg.vak===true || _mcfg.vak===false)
+    && !!_mcfg.sklad;
+  var btn=document.getElementById('mcfg-add-btn');
+  if(btn) btn.disabled = !ok;
+  var sumEl=document.getElementById('mcfg-summary');
+  if(sumEl){
+    if(ok){
+      var priceInfo=_mcfgComputePrice();
+      sumEl.innerHTML = _fmtMeatConfigLines(_mcfg).map(function(l){return '<div>'+_he(l)+'</div>';}).join('')
+        +'<div class="mcfg-summary-price">'+(priceInfo.priceTBD?'Cena bude upřesněna':fmt(priceInfo.total))+'</div>';
+    } else sumEl.innerHTML='';
+  }
+  return ok;
+}
+function mcfgAddToCart(){
+  if(!_mcfg || !mcfgValidate()) return;
+  var priceInfo = _mcfgComputePrice();
+  var config = {
+    uprava:_mcfg.uprava, marinadaId:_mcfg.marinadaId, marinadaName:_mcfg.marinadaName,
+    forma:_mcfg.forma, kg:_mcfg.kg, platkyRezim:_mcfg.platkyRezim, pocet:_mcfg.pocet, vahaKg:_mcfg.vahaKg,
+    vak:_mcfg.vak, sklad:_mcfg.sklad, poznamka:_mcfg.poznamka
+  };
+  masoCartItems.push({
+    name: _mcfg.product.name, baleni:'', qty:1, voc:0,
+    total: priceInfo.total, priceTBD: priceInfo.priceTBD,
+    cat: MASO_CAT, config: config
+  });
+  closeMeatConfig();
+  buildAll();
 }
 
 function _jumpToCat(i){
@@ -242,6 +463,10 @@ function recalc(){
       items.push(Object.assign({},p,{qty:q,total:val}));
     } else { if(lel) lel.textContent='—'; }
   });
+  masoCartItems.forEach(function(it){
+    if(!it.priceTBD) total += it.total;
+    items.push(it);
+  });
   document.getElementById('tv').textContent = fmt(total);
   var dph = total * VAT;
   document.getElementById('tsdph').innerHTML = total>0
@@ -264,6 +489,10 @@ function recalc(){
   }
   var irows = '';
   items.forEach(function(it){
+    if(it.cat===MASO_CAT){
+      irows += '<div class="srow srow-maso"><span class="sn">'+_he(it.name)+'<br><small>'+_he(_fmtMeatConfigShort(it.config))+'</small></span><span class="sv">'+(it.priceTBD?'cena bude up\u0159esn\u011bna':fmt(it.total))+'</span></div>';
+      return;
+    }
     var n = it.name+(it.baleni?' ('+it.baleni+')':'');
     irows += '<div class="srow"><span class="sn">'+n+' \u00d7 '+it.qty+' ks</span><span class="sv">'+fmt(it.total)+'</span></div>';
   });
@@ -281,8 +510,9 @@ function potvrditObjednavku(){
     var q=Math.max(0,parseInt(el.value)||0);
     if(q>0) items.push(Object.assign({},p,{qty:q,total:p.voc*q}));
   });
+  masoCartItems.forEach(function(it){ items.push(it); });
   if(!items.length){ alert('Přidejte prosím alespoň jeden produkt.'); return; }
-  var tb=items.reduce(function(s,i){return s+i.total;},0);
+  var tb=items.reduce(function(s,i){return s+(i.priceTBD?0:i.total);},0);
   var fi=document.getElementById('firma').value.trim();
   var tel=document.getElementById('tel').value.trim();
   var adr=document.getElementById('adr').value.trim();
@@ -298,7 +528,11 @@ function potvrditObjednavku(){
     phone: tel||null,
     address: adr||null,
     note: poz||null,
-    items: items.map(function(it){ return {name:it.name,baleni:it.baleni||'',qty:it.qty,voc:it.voc,total:it.total}; }),
+    items: items.map(function(it){
+      var row={name:it.name,baleni:it.baleni||'',qty:it.qty,voc:it.voc,total:it.priceTBD?0:it.total};
+      if(it.cat===MASO_CAT){ row.cat=it.cat; row.config=it.config; if(it.priceTBD) row.priceTBD=true; }
+      return row;
+    }),
     total_without_vat: tb,
     user_id: _user ? _user.id : null
   }]).then(function(res){
@@ -308,7 +542,10 @@ function potvrditObjednavku(){
     saveCustomerDetails(jm,fi,em,tel,adr);
     // Email notifikace
     if(EJS_KEY){
-      var itemsTxt=items.map(function(it){ return it.name+(it.baleni?' ('+it.baleni+')':'')+' — '+it.qty+' ks — '+it.total.toFixed(2)+' Kc'; }).join('\n');
+      var itemsTxt=items.map(function(it){
+        if(it.cat===MASO_CAT) return it.name+' ('+_fmtMeatConfigShort(it.config)+') — '+(it.priceTBD?'cena bude upresnena':it.total.toFixed(2)+' Kc');
+        return it.name+(it.baleni?' ('+it.baleni+')':'')+' — '+it.qty+' ks — '+it.total.toFixed(2)+' Kc';
+      }).join('\n');
       emailjs.send(EJS_SERVICE, EJS_TEMPLATE, {
         customer_name: jm, company: fi||'—', email: em, phone: tel||'—',
         items_text: itemsTxt, total: tb.toFixed(2), note: poz||'—'
@@ -328,6 +565,8 @@ function closeConfirm(){
   document.getElementById('confirm-modal').className='';
   document.getElementById('poz').value='';
   P.forEach(function(p,i){ var el=document.getElementById('q'+i); if(el) el.value=0; });
+  masoCartItems=[];
+  buildAll();
   // Refill saved customer details if remember-me is on
   try{
     var saved=localStorage.getItem('df_customer');
@@ -449,7 +688,7 @@ function openAdmin(){
 function closeAdmin(){ document.getElementById('adm-ov').style.display='none'; }
 
 function switchTab(tab){
-  ['products','orders','dl'].forEach(function(t){
+  ['products','orders','dl','maso','users'].forEach(function(t){
     var btn=document.getElementById('tab-'+t);
     var pane=document.getElementById('pane-'+t);
     if(btn) btn.classList.toggle('active', t===tab);
@@ -457,6 +696,102 @@ function switchTab(tab){
   });
   if(tab==='orders') loadOrders();
   if(tab==='dl') loadDodaciListy();
+  if(tab==='maso') loadMasoAdmin();
+  if(tab==='users') loadAdminUsers();
+}
+
+// ── Admin: Maso products & marinades ──
+function loadMasoAdmin(){
+  _db.from('meat_products').select('*').order('sort').then(function(res){
+    var list=document.getElementById('maso-prod-list');
+    if(res.error){ list.innerHTML='<div class="orders-msg">Chyba: '+res.error.message+'</div>'; return; }
+    var rows=(res.data||[]).map(function(p){
+      return '<div class="maso-adm-row">'
+        +'<span class="maso-adm-name">'+_he(p.name)+(p.active?'':' <em style="opacity:.6">(neaktivní)</em>')+'</span>'
+        +'<input type="number" id="madv'+p.id+'" value="'+p.voc_kg+'" step="0.1" min="0" style="width:110px">'
+        +'<button class="adm-prod-save" onclick="saveMeatProductPrice('+p.id+')">Uložit</button>'
+        +'<button class="adm-arch-btn" onclick="toggleMeatProductActive('+p.id+','+(!p.active)+')">'+(p.active?'Deaktivovat':'Aktivovat')+'</button>'
+      +'</div>';
+    }).join('');
+    list.innerHTML = rows || '<p style="color:#837261;font-size:13px;">Žádné produkty.</p>';
+  });
+  _db.from('marinades').select('*').order('sort').then(function(res){
+    var list=document.getElementById('maso-marinade-list');
+    if(res.error){ list.innerHTML='<div class="orders-msg">Chyba: '+res.error.message+'</div>'; return; }
+    var rows=(res.data||[]).map(function(m){
+      return '<div class="maso-adm-row">'
+        +'<input type="text" id="mmn'+m.id+'" value="'+_he(m.name)+'" style="flex:1">'
+        +'<button class="adm-prod-save" onclick="saveMarinadeName('+m.id+')">Uložit</button>'
+        +'<button class="adm-arch-btn" onclick="toggleMarinadeActive('+m.id+','+(!m.active)+')">'+(m.active?'Deaktivovat':'Aktivovat')+'</button>'
+      +'</div>';
+    }).join('');
+    list.innerHTML = rows || '<p style="color:#837261;font-size:13px;">Žádné marinády.</p>';
+  });
+}
+function saveMeatProductPrice(id){
+  var v=parseFloat(document.getElementById('madv'+id).value)||0;
+  _db.from('meat_products').update({voc_kg:v}).eq('id',id).then(function(res){
+    if(res.error){ alert('Chyba při ukládání: '+res.error.message); return; }
+    loadMasoAdmin();
+  });
+}
+function toggleMeatProductActive(id,active){
+  _db.from('meat_products').update({active:active}).eq('id',id).then(function(res){
+    if(res.error){ alert('Chyba: '+res.error.message); return; }
+    loadMasoAdmin();
+  });
+}
+function saveMarinadeName(id){
+  var v=document.getElementById('mmn'+id).value.trim();
+  if(!v){ alert('Název marinády nesmí být prázdný.'); return; }
+  _db.from('marinades').update({name:v}).eq('id',id).then(function(res){
+    if(res.error){ alert('Chyba při ukládání: '+res.error.message); return; }
+    loadMasoAdmin();
+  });
+}
+function toggleMarinadeActive(id,active){
+  _db.from('marinades').update({active:active}).eq('id',id).then(function(res){
+    if(res.error){ alert('Chyba: '+res.error.message); return; }
+    loadMasoAdmin();
+  });
+}
+function addMarinade(){
+  var el=document.getElementById('maso-new-marinade');
+  var name=el.value.trim();
+  if(!name){ alert('Zadejte prosím název marinády.'); return; }
+  _db.from('marinades').insert([{name:name,sort:999}]).then(function(res){
+    if(res.error){ alert('Chyba při přidávání: '+res.error.message); return; }
+    el.value='';
+    loadMasoAdmin();
+  });
+}
+
+// ── Admin: user category permissions ──
+function loadAdminUsers(){
+  var list=document.getElementById('users-list');
+  list.innerHTML='<div class="orders-msg">Načítám uživatele…</div>';
+  _db.rpc('admin_list_users').then(function(res){
+    if(res.error){ list.innerHTML='<div class="orders-msg">Chyba: '+res.error.message+'</div>'; return; }
+    var users=res.data||[];
+    if(!users.length){ list.innerHTML='<div class="orders-msg">Žádní uživatelé.</div>'; return; }
+    var html='<table class="users-tbl"><tr><th>E-mail</th><th>Registrace</th><th>Maso</th></tr>';
+    users.forEach(function(u){
+      var d=new Date(u.created_at).toLocaleDateString('cs-CZ');
+      var hasMaso=(u.categories||[]).indexOf(MASO_PERM)>=0;
+      html+='<tr><td>'+_he(u.email)+'</td><td>'+d+'</td><td>'
+        +'<label class="tgl"><input type="checkbox" '+(hasMaso?'checked':'')+' onchange="toggleUserCategory(\''+u.id+'\',this.checked)"><span class="tsl"></span></label>'
+        +'</td></tr>';
+    });
+    html+='</table>';
+    list.innerHTML=html;
+  });
+}
+function toggleUserCategory(userId,enabled){
+  _db.from('user_category_permissions').upsert([{
+    user_id:userId, category:MASO_PERM, enabled:enabled, granted_by:_user?_user.id:null
+  }],{onConflict:'user_id,category'}).then(function(res){
+    if(res.error){ alert('Chyba při ukládání oprávnění: '+res.error.message); loadAdminUsers(); }
+  });
 }
 
 // ── Orders ──
@@ -482,6 +817,11 @@ function renderOrders(){
     var items=o.items||[];
     var irows='';
     items.forEach(function(it){
+      if(it.cat===MASO_CAT){
+        var cfgLines=_fmtMeatConfigLines(it.config).map(_he).join('<br>');
+        irows+='<tr><td>'+_he(it.name)+'<br><small style="font-weight:400;opacity:.75">'+cfgLines+'</small></td><td style="text-align:center">—</td><td style="text-align:right;font-weight:800">'+(it.priceTBD?'upřesní se':it.total.toFixed(2)+' Kč')+'</td></tr>';
+        return;
+      }
       irows+='<tr><td>'+(it.name||'')+(it.baleni?' ('+it.baleni+')':'')+'</td><td style="text-align:center">'+it.qty+' ks</td><td style="text-align:right;font-weight:800">'+it.total.toFixed(2)+' Kč</td></tr>';
     });
     var info='';
@@ -569,6 +909,17 @@ function tiskniObjednavkuPDF(idx){
   var bez=o.total_without_vat||0, dph=bez*VAT, celk=bez*(1+VAT);
   function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   var rows=items.map(function(it,i){
+    if(it.cat===MASO_CAT){
+      var cfgLines=_fmtMeatConfigLines(it.config).map(esc).join('<br>');
+      return '<tr>'
+        +'<td class="c">'+( i+1)+'</td>'
+        +'<td>'+esc(it.name)+'<br><small>'+cfgLines+'</small></td>'
+        +'<td class="c">—</td>'
+        +'<td class="c">—</td>'
+        +'<td class="r">—</td>'
+        +'<td class="r b">'+(it.priceTBD?'upřesní se':it.total.toFixed(2)+' Kč')+'</td>'
+        +'</tr>';
+    }
     return '<tr>'
       +'<td class="c">'+( i+1)+'</td>'
       +'<td>'+esc(it.name)+'</td>'
@@ -804,8 +1155,9 @@ function generatePDF(){
     var q=Math.max(0,parseInt(el.value)||0);
     if(q>0)items.push(Object.assign({},p,{qty:q,total:p.voc*q}));
   });
+  masoCartItems.forEach(function(it){ items.push(it); });
   if(!items.length){alert('Přidejte prosím alespoň jeden produkt.');return;}
-  var tb=items.reduce(function(s,it){return s+it.total;},0);
+  var tb=items.reduce(function(s,it){return s+(it.priceTBD?0:it.total);},0);
   var datum=new Date().toLocaleDateString('cs-CZ');
   var fi=document.getElementById('firma').value.trim();
   var tel=document.getElementById('tel').value.trim();
@@ -845,15 +1197,22 @@ function generatePDF(){
   doc.autoTable({
     startY:y,
     head:[['Produkt','Objem','Trvanlivost','Skladovani','Mnozstvi','VOC/ks','Celkem']],
-    body:items.map(function(it){return[
-      it.name,
-      it.baleni||'—',
-      it.trv||'—',
-      it.sklad||'—',
-      it.qty+' ks',
-      it.voc+' Kc',
-      it.total.toFixed(2)+' Kc'
-    ];}),
+    body:items.map(function(it){
+      if(it.cat===MASO_CAT) return[
+        it.name+' ('+_fmtMeatConfigShort(it.config)+')',
+        '—','—','—','—','—',
+        it.priceTBD?'upresni se':it.total.toFixed(2)+' Kc'
+      ];
+      return[
+        it.name,
+        it.baleni||'—',
+        it.trv||'—',
+        it.sklad||'—',
+        it.qty+' ks',
+        it.voc+' Kc',
+        it.total.toFixed(2)+' Kc'
+      ];
+    }),
     headStyles:{fillColor:[80,63,55],textColor:[220,203,188],fontStyle:'bold',fontSize:8},
     bodyStyles:{fontSize:8,textColor:[30,30,30]},
     alternateRowStyles:{fillColor:[240,235,228]},
@@ -1455,6 +1814,7 @@ var _user = null;
 
 function _onAuthChange(user){
   _user = user;
+  loadMasoData();
   var guest = document.getElementById('auth-bar-guest');
   var loggedIn = document.getElementById('auth-bar-user');
   var lbl = document.getElementById('auth-email-lbl');
@@ -1540,6 +1900,12 @@ function loadMyOrders(){
       var st=o.status||'nova';
       var items=o.items||[];
       var irows=items.map(function(it){
+        if(it.cat===MASO_CAT){
+          var cfgLines=_fmtMeatConfigLines(it.config).map(_he).join('<br>');
+          return '<tr><td>'+_he(it.name)+'<br><small style="font-weight:400;opacity:.75">'+cfgLines+'</small></td>'
+            +'<td style="text-align:center">—</td>'
+            +'<td style="text-align:right;font-weight:800">'+(it.priceTBD?'upřesní se':it.total.toFixed(2)+' Kč')+'</td></tr>';
+        }
         return '<tr><td>'+(it.name||'')+(it.baleni?' ('+it.baleni+')':'')+'</td>'
           +'<td style="text-align:center">'+it.qty+' ks</td>'
           +'<td style="text-align:right;font-weight:800">'+it.total.toFixed(2)+' Kč</td></tr>';

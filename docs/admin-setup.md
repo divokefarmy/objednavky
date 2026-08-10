@@ -37,3 +37,23 @@ After setting the flag and re-logging:
 Edit the same user's `app_metadata` and remove `"role": "admin"` (or set it to anything else). Force the user to re-login to get a fresh JWT — until they do, their existing token still has admin claims for up to the token TTL (default 1 hour).
 
 For an emergency revoke, also delete the user's sessions in **Authentication → Users → [user] → Sessions**.
+
+# Granting access to a restricted category (e.g. "Maso")
+
+Some product categories are hidden by default and only visible to users an admin has explicitly approved. This is a general, scalable mechanism (`user_category_permissions`) — not a single boolean — so more restricted categories can reuse it later without another migration.
+
+## Prerequisite: apply the migration
+
+Run [`supabase/migrations/02_meat_category.sql`](../supabase/migrations/02_meat_category.sql) once in the Supabase SQL editor (after `01_admin_rls.sql`). It creates `user_category_permissions`, `meat_products`, `marinades`, the `has_category_access()` helper, the `admin_list_users()` RPC used by the admin "Uživatelé" tab, and a trigger that rejects any order containing a Maso item from a user without access — the UI gate is convenience, this trigger is the real boundary.
+
+## Grant/revoke a user
+
+1. Log in as an admin and open **Správa → Uživatelé**.
+2. Find the user by e-mail (they must have registered first — there's no separate invite flow) and toggle the "Maso" switch.
+3. This writes an `enabled` row in `user_category_permissions` for that `user_id` + category. No re-login needed — access is checked on each request via RLS, not baked into the JWT.
+
+The category tab itself ("Maso") is always visible in the customer-facing navigation, but its contents stay locked (no products, no prices) until access is granted — both in the UI and, because of RLS, in the actual API response.
+
+## Managing Maso products & marinades
+
+**Správa → Maso** — set price per kg for each of the 7 cuts (defaults to 0/"cena bude upřesněna" until filled in) and manage the marinade list (rename, add, deactivate). These live in their own Supabase tables, not the hardcoded catalog in `js/app.js`, specifically so they can be RLS-gated.

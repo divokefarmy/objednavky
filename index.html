@@ -54,6 +54,8 @@
       <button class="adm-tab active" id="tab-products" onclick="switchTab('products')">Produkty</button>
       <button class="adm-tab" id="tab-orders" onclick="switchTab('orders')">Objednávky</button>
       <button class="adm-tab" id="tab-dl" onclick="switchTab('dl')">Dodací listy</button>
+      <button class="adm-tab" id="tab-maso" onclick="switchTab('maso')">Maso</button>
+      <button class="adm-tab" id="tab-users" onclick="switchTab('users')">Uživatelé</button>
     </div>
     <div id="pane-products">
       <div class="adm-top">
@@ -93,6 +95,20 @@
         <button class="orders-reload" onclick="loadDodaciListy()" style="margin:0">↻ Obnovit seznam</button>
       </div>
       <div id="dl-list"><div class="orders-msg">Načítám dodací listy…</div></div>
+    </div>
+    <div id="pane-maso" style="display:none;">
+      <h4 style="margin:0 0 8px;font-size:13px;color:#837261;">Produkty (cena Kč/kg bez DPH)</h4>
+      <div id="maso-prod-list"><div class="orders-msg">Načítám…</div></div>
+      <h4 style="margin:20px 0 8px;font-size:13px;color:#837261;">Marinády</h4>
+      <div id="maso-marinade-list"><div class="orders-msg">Načítám…</div></div>
+      <div class="maso-marinade-add">
+        <input type="text" id="maso-new-marinade" placeholder="Název nové marinády…">
+        <button class="adm-add-confirm" onclick="addMarinade()">+ Přidat marinádu</button>
+      </div>
+    </div>
+    <div id="pane-users" style="display:none;">
+      <div id="users-list"><div class="orders-msg">Načítám uživatele…</div></div>
+      <button class="orders-reload" onclick="loadAdminUsers()">↻ Obnovit seznam</button>
     </div>
   </div>
 </div>
@@ -319,6 +335,76 @@
       <div class="confirm-sub">Vaši objednávku jsme přijali.<br>Brzy se vám ozveme s potvrzením.</div>
       <div class="confirm-detail" id="confirm-detail"></div>
       <button class="confirm-close" onclick="closeConfirm()">Zavřít</button>
+    </div>
+  </div>
+
+  <div id="meat-cfg-ov">
+    <div class="meat-cfg-box">
+      <button class="ov-close" onclick="closeMeatConfig()">✕</button>
+      <h3 id="mcfg-title" class="mcfg-title"></h3>
+
+      <div class="mcfg-step">
+        <label>1. Úprava masa</label>
+        <div class="mcfg-choice" id="mcfg-uprava-choice">
+          <button type="button" class="mcfg-opt" data-v="cerstve" onclick="mcfgSetUprava('cerstve')">Čerstvé</button>
+          <button type="button" class="mcfg-opt" data-v="nalozene" onclick="mcfgSetUprava('nalozene')">Naložené</button>
+        </div>
+      </div>
+
+      <div class="mcfg-step" id="mcfg-step-marinada" style="display:none">
+        <label>2. Marináda</label>
+        <select id="mcfg-marinada" onchange="mcfgSetMarinada(this.value)"></select>
+      </div>
+
+      <div class="mcfg-step">
+        <label>3. Forma balení</label>
+        <div class="mcfg-choice" id="mcfg-forma-choice">
+          <button type="button" class="mcfg-opt" data-v="kus" onclick="mcfgSetForma('kus')">V kuse</button>
+          <button type="button" class="mcfg-opt" data-v="platky" onclick="mcfgSetForma('platky')">Nakrájet na plátky</button>
+        </div>
+        <div id="mcfg-forma-kus" style="display:none">
+          <label class="mcfg-sublabel">Hmotnost (kg)</label>
+          <input type="number" id="mcfg-kg" min="0.1" step="0.1" value="1" oninput="mcfgValidate()">
+        </div>
+        <div id="mcfg-forma-platky" style="display:none">
+          <div class="mcfg-switch" id="mcfg-platky-switch">
+            <button type="button" class="mcfg-opt" data-v="pocet" onclick="mcfgSetPlatkyRezim('pocet')">Podle počtu</button>
+            <button type="button" class="mcfg-opt" data-v="vaha" onclick="mcfgSetPlatkyRezim('vaha')">Podle váhy</button>
+          </div>
+          <div id="mcfg-platky-pocet" style="display:none">
+            <label class="mcfg-sublabel">Počet plátků</label>
+            <input type="number" id="mcfg-pocet" min="1" step="1" value="4" oninput="mcfgValidate()">
+          </div>
+          <div id="mcfg-platky-vaha" style="display:none">
+            <label class="mcfg-sublabel">Celková váha (kg)</label>
+            <input type="number" id="mcfg-vaha" min="0.1" step="0.1" value="1" oninput="mcfgValidate()">
+          </div>
+        </div>
+      </div>
+
+      <div class="mcfg-step">
+        <label>4. Vakuování</label>
+        <div class="mcfg-choice" id="mcfg-vak-choice">
+          <button type="button" class="mcfg-opt" data-v="1" onclick="mcfgSetVak(true)">Zavakuovat</button>
+          <button type="button" class="mcfg-opt" data-v="0" onclick="mcfgSetVak(false)">Nezavakuovat</button>
+        </div>
+      </div>
+
+      <div class="mcfg-step">
+        <label>5. Skladování</label>
+        <div class="mcfg-choice" id="mcfg-sklad-choice">
+          <button type="button" class="mcfg-opt" data-v="zmrazit" onclick="mcfgSetSklad('zmrazit')">Zmrazit</button>
+          <button type="button" class="mcfg-opt" data-v="cerstve" onclick="mcfgSetSklad('cerstve')">Čerstvé (bez mrazení)</button>
+        </div>
+      </div>
+
+      <div class="mcfg-step">
+        <label>6. Poznámka <span class="mcfg-optional">(nepovinné)</span></label>
+        <textarea id="mcfg-poznamka" placeholder="Upřesnění požadavků…" oninput="mcfgValidate()"></textarea>
+      </div>
+
+      <div class="mcfg-summary" id="mcfg-summary"></div>
+      <button class="mcfg-add-btn" id="mcfg-add-btn" onclick="mcfgAddToCart()" disabled>Přidat do objednávky</button>
     </div>
   </div>
 

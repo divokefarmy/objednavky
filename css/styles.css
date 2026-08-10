@@ -691,3 +691,59 @@ body{font-family:var(--font-body);}
 @media(min-width:740px){
   .logo-wrap svg{height:60px;}
 }
+
+/* ── Maso (gated category) ── */
+.cat-nav-locked{opacity:.6;}
+.maso-locked{padding:36px 24px;text-align:center;}
+.maso-locked-msg{font-size:14px;font-weight:700;color:#503f37;margin-bottom:8px;}
+.maso-locked-sub{font-size:13px;color:var(--t3);font-weight:500;max-width:420px;margin:0 auto;}
+.maso-locked-btn{margin-top:14px;padding:11px 22px;background:#503f37;color:#DACBBC;border:none;border-radius:11px;font-size:13px;font-weight:800;cursor:pointer;transition:all .18s;font-family:'Inter',sans-serif;}
+.maso-locked-btn:hover{background:#1e1e1e;}
+.maso-empty{grid-column:1/-1;font-size:13px;color:var(--t3);text-align:center;padding:20px 0;}
+.maso-card{justify-content:space-between;}
+.maso-price-tbd{font-size:14px;color:var(--t3);font-style:italic;}
+.maso-config-btn{margin-top:8px;padding:10px 14px;background:#503f37;color:#DACBBC;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;transition:all .18s;font-family:'Inter',sans-serif;}
+.maso-config-btn:hover{background:#1e1e1e;}
+.maso-cart-list{padding:0 18px 18px;display:flex;flex-direction:column;gap:8px;}
+.maso-cart-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px 14px;background:rgba(80,63,55,0.08);border:1px solid rgba(80,63,55,0.15);border-radius:12px;font-size:12px;}
+.maso-cart-rn{color:#503f37;font-weight:700;}
+.maso-cart-rn small{color:var(--t3);font-weight:500;}
+.maso-cart-rv{display:flex;align-items:center;gap:8px;font-weight:800;color:#503f37;white-space:nowrap;}
+.maso-cart-rm{background:transparent;border:none;color:var(--red);cursor:pointer;font-size:14px;font-weight:800;padding:0 2px;}
+.srow-maso .sn small{color:var(--t3);font-weight:500;display:block;margin-top:2px;}
+
+/* ── Meat configurator modal ── */
+#meat-cfg-ov{position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:1900;display:none;align-items:center;justify-content:center;padding:20px;}
+#meat-cfg-ov.show{display:flex;}
+.meat-cfg-box{position:relative;background:#DACBBC;border:1px solid rgba(80,63,55,0.15);border-radius:24px;padding:32px 28px 28px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+.ov-close{position:absolute;top:16px;right:16px;background:rgba(80,63,55,0.10);border:1px solid rgba(80,63,55,0.18);color:#503f37;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;transition:all .18s;}
+.ov-close:hover{background:#503f37;color:#DACBBC;}
+.mcfg-title{font-size:19px;font-weight:800;color:#1e1e1e;margin-bottom:18px;padding-right:30px;}
+.mcfg-step{margin-bottom:18px;}
+.mcfg-step > label{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#837261;margin-bottom:8px;font-weight:800;}
+.mcfg-optional{text-transform:none;letter-spacing:0;font-weight:500;}
+.mcfg-sublabel{display:block;font-size:12px;color:#503f37;font-weight:700;margin:10px 0 6px;}
+.mcfg-choice,.mcfg-switch{display:flex;gap:8px;flex-wrap:wrap;}
+.mcfg-opt{flex:1;min-width:120px;padding:11px 14px;background:rgba(255,255,255,0.55);border:1.5px solid rgba(80,63,55,0.20);border-radius:11px;color:#503f37;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;font-family:'Inter',sans-serif;}
+.mcfg-opt:hover{border-color:#837261;}
+.mcfg-opt.active{background:#503f37;color:#DACBBC;border-color:#503f37;}
+.mcfg-switch{margin-top:10px;}
+.mcfg-step input[type=number],.mcfg-step input[type=text],.mcfg-step select,.mcfg-step textarea{width:100%;padding:11px 14px;border:1.5px solid rgba(80,63,55,0.20);border-radius:11px;font-size:14px;font-family:'Inter',sans-serif;background:#fff;color:#111;outline:none;transition:border-color .18s;}
+.mcfg-step input:focus,.mcfg-step select:focus,.mcfg-step textarea:focus{border-color:#503f37;}
+.mcfg-step textarea{min-height:70px;resize:vertical;}
+.mcfg-summary{margin:16px 0;padding:14px 16px;background:rgba(80,63,55,0.06);border:1px solid rgba(80,63,55,0.14);border-radius:12px;font-size:12.5px;color:#503f37;font-weight:600;display:flex;flex-direction:column;gap:3px;}
+.mcfg-summary:empty{display:none;}
+.mcfg-summary-price{margin-top:6px;font-size:15px;font-weight:800;color:#1e1e1e;}
+.mcfg-add-btn{width:100%;padding:14px;background:#503f37;color:#DACBBC;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;letter-spacing:.02em;}
+.mcfg-add-btn:hover:not(:disabled){background:#1e1e1e;}
+.mcfg-add-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ── Admin: Maso products/marinades & Uživatelé tabs ── */
+.maso-adm-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,0.40);border:1px solid rgba(80,63,55,0.10);border-radius:12px;margin-bottom:6px;}
+.maso-adm-name{flex:1;font-size:13px;font-weight:700;color:#1e1e1e;}
+.maso-adm-row input{padding:8px 12px;background:#fff;border:1px solid rgba(80,63,55,0.20);border-radius:8px;color:#1e1e1e;font-size:13px;font-weight:700;outline:none;font-family:'Inter',sans-serif;}
+.maso-marinade-add{display:flex;gap:8px;margin-top:10px;}
+.maso-marinade-add input{flex:1;padding:10px 14px;background:#fff;border:1px solid rgba(80,63,55,0.20);border-radius:10px;color:#1e1e1e;font-size:13px;font-weight:600;outline:none;font-family:'Inter',sans-serif;}
+.users-tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.users-tbl th{text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#837261;font-weight:800;padding:8px 12px;border-bottom:1px solid rgba(80,63,55,0.15);}
+.users-tbl td{padding:10px 12px;border-bottom:1px solid rgba(80,63,55,0.10);color:#1e1e1e;font-weight:600;}
