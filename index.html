@@ -391,7 +391,12 @@
       </div>
 
       <div class="mcfg-step">
-        <label>5. Skladování</label>
+        <label>5. Počet balení</label>
+        <input type="number" id="mcfg-baleni" min="1" step="1" value="1" oninput="mcfgValidate()">
+      </div>
+
+      <div class="mcfg-step">
+        <label>6. Skladování</label>
         <div class="mcfg-choice" id="mcfg-sklad-choice">
           <button type="button" class="mcfg-opt" data-v="zmrazit" onclick="mcfgSetSklad('zmrazit')">Zmrazit</button>
           <button type="button" class="mcfg-opt" data-v="cerstve" onclick="mcfgSetSklad('cerstve')">Čerstvé (bez mrazení)</button>
@@ -399,7 +404,7 @@
       </div>
 
       <div class="mcfg-step">
-        <label>6. Poznámka <span class="mcfg-optional">(nepovinné)</span></label>
+        <label>7. Poznámka <span class="mcfg-optional">(nepovinné)</span></label>
         <textarea id="mcfg-poznamka" placeholder="Upřesnění požadavků…" oninput="mcfgValidate()"></textarea>
       </div>
 

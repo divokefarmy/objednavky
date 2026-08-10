@@ -271,12 +271,69 @@ function _fmtMeatConfigLines(c){
     lines.push('Forma: nakrájet na plátky ('+(c.platkyRezim==='pocet'?c.pocet+' ks':c.vahaKg+' kg')+')');
   }
   lines.push('Vakuování: '+(c.vak?'ano':'ne'));
+  lines.push('Počet balení: '+(c.pocetBaleni||1));
   lines.push('Skladování: '+(c.sklad==='zmrazit'?'zmrazit':'čerstvé (bez mrazení)'));
   if(c.poznamka) lines.push('Poznámka: '+c.poznamka);
   return lines;
 }
 function _fmtMeatConfigShort(c){
   return _fmtMeatConfigLines(c).join(' · ');
+}
+
+// ── Czech declension helpers (best-effort, covers common butchery terms) ──
+var _MEAT_NOUN_DECL = {
+  'krkovice':{g:'f',acc:'krkovici'}, 'kotleta':{g:'f',acc:'kotletu'},
+  'plec':{g:'f',acc:'plec'}, 'plecko':{g:'n',acc:'plecko'},
+  'kýta':{g:'f',acc:'kýtu'}, 'kyta':{g:'f',acc:'kytu'},
+  'pečeně':{g:'f',acc:'pečeni'}, 'pecene':{g:'f',acc:'peceni'},
+  'panenka':{g:'f',acc:'panenku'}, 'roláda':{g:'f',acc:'roládu'}, 'rolada':{g:'f',acc:'roladu'},
+  'žebra':{g:'n',acc:'žebra'}, 'zebra':{g:'n',acc:'zebra'},
+  'žebírka':{g:'n',acc:'žebírka'}, 'zebirka':{g:'n',acc:'zebirka'},
+  'bůček':{g:'m',acc:'bůček'}, 'bucek':{g:'m',acc:'bucek'},
+  'bok':{g:'m',acc:'bok'}, 'ocas':{g:'m',acc:'ocas'},
+  'jazyk':{g:'m',acc:'jazyk'}, 'hřbet':{g:'m',acc:'hřbet'}, 'hrbet':{g:'m',acc:'hrbet'},
+  'karé':{g:'n',acc:'karé'}, 'kare':{g:'n',acc:'kare'},
+  'líčka':{g:'n',acc:'líčka'}, 'licka':{g:'n',acc:'licka'},
+  'srdce':{g:'n',acc:'srdce'}, 'ledvinky':{g:'f',acc:'ledvinky'},
+  'játra':{g:'n',acc:'játra'}, 'jatra':{g:'n',acc:'jatra'},
+  'slanina':{g:'f',acc:'slaninu'}, 'klobása':{g:'f',acc:'klobásu'}, 'klobasa':{g:'f',acc:'klobasu'},
+  'guláš':{g:'m',acc:'guláš'}, 'gulas':{g:'m',acc:'gulas'}, 'steak':{g:'m',acc:'steak'}
+};
+function _czechDeclineProduct(name){
+  var words = String(name||'').trim().split(/\s+/);
+  var last = words[words.length-1] || '';
+  var key = last.toLowerCase();
+  var entry = _MEAT_NOUN_DECL[key];
+  var g, acc;
+  if(entry){ g=entry.g; acc=entry.acc; }
+  else if(/a$/i.test(last)){ g='f'; acc=last.slice(0,-1)+'u'; }
+  else if(/[eě]$/i.test(last)){ g='f'; acc=last.slice(0,-1)+'i'; }
+  else { g='m'; acc=last; }
+  words[words.length-1] = acc;
+  return { gender:g, phrase: words.join(' ').toLowerCase() };
+}
+function _czechAdjAcc(base, gender){
+  if(gender==='f') return base.replace(/ý$/,'ou');
+  if(gender==='n') return base.replace(/ý$/,'é');
+  return base;
+}
+function _mcfgSentence(c){
+  if(!c || !c.product || !c.uprava || !c.forma || !c.sklad) return '';
+  var decl = _czechDeclineProduct(c.product.name);
+  var g = decl.gender;
+  var s = 'Když to takhle objednáš, dostaneš '
+    + _czechAdjAcc(c.uprava==='nalozene'?'naložený':'čerstvý', g) + ' ' + decl.phrase;
+  if(c.uprava==='nalozene' && c.marinadaName) s += ' v marinádě ' + c.marinadaName;
+  if(c.forma==='kus'){
+    s += ' v kuse o hmotnosti ' + (c.kg||0) + ' kg';
+  } else if(c.forma==='platky'){
+    s += ', ' + _czechAdjAcc('nakrájený', g) + ' na ';
+    s += c.platkyRezim==='pocet' ? (c.pocet||0)+' plátků' : 'plátky o celkové váze '+(c.vahaKg||0)+' kg';
+  }
+  s += ', ' + _czechAdjAcc(c.vak?'zavakuovaný':'nezavakuovaný', g);
+  s += ', ' + _czechAdjAcc(c.sklad==='zmrazit'?'zmrazený':'čerstvý', g) + (c.sklad==='zmrazit'?'':' (bez mrazení)');
+  s += ', a takových balíčků dostaneš ' + (c.pocetBaleni||1) + '.';
+  return s;
 }
 
 // ── Meat configurator modal ──
@@ -293,12 +350,13 @@ function openMeatConfig(productId){
   var p = meatProducts.filter(function(m){ return m.id===productId; })[0];
   if(!p) return;
   _mcfg = { productId:productId, product:p, uprava:null, marinadaId:null, marinadaName:null,
-    forma:null, kg:null, platkyRezim:null, pocet:null, vahaKg:null, vak:null, sklad:null, poznamka:'' };
+    forma:null, kg:null, platkyRezim:null, pocet:null, vahaKg:null, vak:null, sklad:null, pocetBaleni:1, poznamka:'' };
   document.getElementById('mcfg-title').textContent = p.name;
   ['mcfg-uprava-choice','mcfg-forma-choice','mcfg-platky-switch','mcfg-vak-choice','mcfg-sklad-choice'].forEach(function(id){ _setActive(id,''); });
   document.getElementById('mcfg-kg').value = 1;
   document.getElementById('mcfg-pocet').value = 4;
   document.getElementById('mcfg-vaha').value = 1;
+  document.getElementById('mcfg-baleni').value = 1;
   document.getElementById('mcfg-poznamka').value = '';
   document.getElementById('mcfg-step-marinada').style.display = 'none';
   document.getElementById('mcfg-forma-kus').style.display = 'none';
@@ -365,12 +423,14 @@ function mcfgSync(){
   var kgEl=document.getElementById('mcfg-kg'); if(kgEl) _mcfg.kg = parseFloat(kgEl.value)||0;
   var pocetEl=document.getElementById('mcfg-pocet'); if(pocetEl) _mcfg.pocet = parseInt(pocetEl.value)||0;
   var vahaEl=document.getElementById('mcfg-vaha'); if(vahaEl) _mcfg.vahaKg = parseFloat(vahaEl.value)||0;
+  var baleniEl=document.getElementById('mcfg-baleni'); if(baleniEl) _mcfg.pocetBaleni = parseInt(baleniEl.value)||0;
   var poznEl=document.getElementById('mcfg-poznamka'); if(poznEl) _mcfg.poznamka = poznEl.value.trim();
 }
 function _mcfgComputePrice(){
   var vocKg = (_mcfg.product && _mcfg.product.voc_kg) || 0;
-  if(_mcfg.forma==='kus') return { total: vocKg*(_mcfg.kg||0), priceTBD:false };
-  if(_mcfg.platkyRezim==='vaha') return { total: vocKg*(_mcfg.vahaKg||0), priceTBD:false };
+  var n = _mcfg.pocetBaleni || 1;
+  if(_mcfg.forma==='kus') return { total: vocKg*(_mcfg.kg||0)*n, priceTBD:false };
+  if(_mcfg.platkyRezim==='vaha') return { total: vocKg*(_mcfg.vahaKg||0)*n, priceTBD:false };
   return { total:0, priceTBD:true }; // "podle počtu" plátků — cena se doladí při balení
 }
 function mcfgValidate(){
@@ -382,14 +442,15 @@ function mcfgValidate(){
     && (_mcfg.forma!=='kus' || _mcfg.kg>0)
     && (_mcfg.forma!=='platky' || (!!_mcfg.platkyRezim && ((_mcfg.platkyRezim==='pocet'&&_mcfg.pocet>0)||(_mcfg.platkyRezim==='vaha'&&_mcfg.vahaKg>0))))
     && (_mcfg.vak===true || _mcfg.vak===false)
-    && !!_mcfg.sklad;
+    && !!_mcfg.sklad
+    && _mcfg.pocetBaleni>0;
   var btn=document.getElementById('mcfg-add-btn');
   if(btn) btn.disabled = !ok;
   var sumEl=document.getElementById('mcfg-summary');
   if(sumEl){
     if(ok){
       var priceInfo=_mcfgComputePrice();
-      sumEl.innerHTML = _fmtMeatConfigLines(_mcfg).map(function(l){return '<div>'+_he(l)+'</div>';}).join('')
+      sumEl.innerHTML = '<div class="mcfg-summary-sentence">'+_he(_mcfgSentence(_mcfg))+'</div>'
         +'<div class="mcfg-summary-price">'+(priceInfo.priceTBD?'Cena bude upřesněna':fmt(priceInfo.total))+'</div>';
     } else sumEl.innerHTML='';
   }
@@ -401,10 +462,10 @@ function mcfgAddToCart(){
   var config = {
     uprava:_mcfg.uprava, marinadaId:_mcfg.marinadaId, marinadaName:_mcfg.marinadaName,
     forma:_mcfg.forma, kg:_mcfg.kg, platkyRezim:_mcfg.platkyRezim, pocet:_mcfg.pocet, vahaKg:_mcfg.vahaKg,
-    vak:_mcfg.vak, sklad:_mcfg.sklad, poznamka:_mcfg.poznamka
+    vak:_mcfg.vak, sklad:_mcfg.sklad, pocetBaleni:_mcfg.pocetBaleni, poznamka:_mcfg.poznamka
   };
   masoCartItems.push({
-    name: _mcfg.product.name, baleni:'', qty:1, voc:0,
+    name: _mcfg.product.name, baleni:'', qty:_mcfg.pocetBaleni, voc:0,
     total: priceInfo.total, priceTBD: priceInfo.priceTBD,
     cat: MASO_CAT, config: config
   });
